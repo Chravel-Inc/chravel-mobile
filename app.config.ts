@@ -178,7 +178,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     "expo-notifications",
-    "expo-haptics",
     [
       "expo-splash-screen",
       {
