@@ -12,7 +12,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   splash: {
     image: "./assets/splash.png",
     resizeMode: "contain",
-    backgroundColor: "#000000",
+    backgroundColor: "#191817",
   },
   assetBundlePatterns: ["**/*"],
   ios: {
@@ -34,15 +34,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         "Chravel uses speech recognition to transcribe your voice input for AI Concierge and chat dictation.",
       ITSAppUsesNonExemptEncryption: false,
     },
-    associatedDomains: [
-      "applinks:chravel.app",
-      "webcredentials:chravel.app",
-    ],
-    entitlements: {
-      "aps-environment": "production",
-      "com.apple.developer.applesignin": ["Default"],
-      "com.apple.developer.in-app-payments": ["merchant.com.chravel.app"],
-    },
+    associatedDomains: ["applinks:chravel.app", "webcredentials:chravel.app"],
+    // Entitlements require a paid Apple Developer account.
+    // Uncomment for production builds:
+    // entitlements: {
+    //   "aps-environment": "production",
+    //   "com.apple.developer.applesignin": ["Default"],
+    //   "com.apple.developer.in-app-payments": ["merchant.com.chravel.app"],
+    // },
     privacyManifests: {
       NSPrivacyTracking: false,
       NSPrivacyTrackingDomains: [],
@@ -73,7 +72,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           ],
         },
         {
-          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePhotosOrVideos",
+          NSPrivacyCollectedDataType:
+            "NSPrivacyCollectedDataTypePhotosOrVideos",
           NSPrivacyCollectedDataTypeLinked: true,
           NSPrivacyCollectedDataTypeTracking: false,
           NSPrivacyCollectedDataTypePurposes: [
@@ -81,7 +81,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           ],
         },
         {
-          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePreciseLocation",
+          NSPrivacyCollectedDataType:
+            "NSPrivacyCollectedDataTypePreciseLocation",
           NSPrivacyCollectedDataTypeLinked: true,
           NSPrivacyCollectedDataTypeTracking: false,
           NSPrivacyCollectedDataTypePurposes: [
@@ -97,7 +98,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           ],
         },
         {
-          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeProductInteraction",
+          NSPrivacyCollectedDataType:
+            "NSPrivacyCollectedDataTypeProductInteraction",
           NSPrivacyCollectedDataTypeLinked: true,
           NSPrivacyCollectedDataTypeTracking: false,
           NSPrivacyCollectedDataTypePurposes: [
@@ -114,7 +116,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           ],
         },
         {
-          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePurchaseHistory",
+          NSPrivacyCollectedDataType:
+            "NSPrivacyCollectedDataTypePurchaseHistory",
           NSPrivacyCollectedDataTypeLinked: true,
           NSPrivacyCollectedDataTypeTracking: false,
           NSPrivacyCollectedDataTypePurposes: [
@@ -132,7 +135,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           NSPrivacyAccessedAPITypeReasons: ["C617.1"],
         },
         {
-          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategorySystemBootTime",
+          NSPrivacyAccessedAPIType:
+            "NSPrivacyAccessedAPICategorySystemBootTime",
           NSPrivacyAccessedAPITypeReasons: ["35F9.1"],
         },
         {
@@ -145,7 +149,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
-      backgroundColor: "#000000",
+      backgroundColor: "#191817",
     },
     package: "com.chravel.app",
     versionCode: 1,
@@ -184,7 +188,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         image: "./assets/splash.png",
         imageWidth: 200,
         resizeMode: "contain",
-        backgroundColor: "#000000",
+        backgroundColor: "#191817",
       },
     ],
   ],
