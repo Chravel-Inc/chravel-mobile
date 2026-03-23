@@ -39,15 +39,16 @@ SplashScreen.preventAutoHideAsync();
 
 // Allowed origins for in-WebView navigation.
 // Everything else opens in the system browser.
-const ALLOWED_ORIGINS = [
-  WEB_APP_URL,
-  "about:",
-  "data:",
-];
+const ALLOWED_ORIGINS = [WEB_APP_URL, "about:", "data:"];
 
-const ALLOWED_OAUTH_HOSTS = [
+const ALLOWED_HOSTS = [
   "accounts.google.com",
   "appleid.apple.com",
+  "js.stripe.com",
+  "checkout.stripe.com",
+  "api.stripe.com",
+  "maps.googleapis.com",
+  "maps.google.com",
 ];
 
 export default function App() {
@@ -66,7 +67,7 @@ export default function App() {
   const navigateWebView = useCallback((path: string) => {
     const fullUrl = `${WEB_APP_URL}${path}`;
     webViewRef.current?.injectJavaScript(
-      `window.location.href = ${JSON.stringify(fullUrl)}; true;`
+      `window.location.href = ${JSON.stringify(fullUrl)}; true;`,
     );
   }, []);
 
@@ -92,7 +93,7 @@ export default function App() {
         >;
         const path = getNotificationDeepLink(data);
         if (path) navigateWebView(path);
-      }
+      },
     );
 
     return () => subscription.remove();
@@ -100,115 +101,109 @@ export default function App() {
 
   // ── Bridge: handle messages from the web app ──────────────────
 
-  const handleMessage = useCallback(
-    async (event: WebViewMessageEvent) => {
-      const message = parseBridgeMessage(event.nativeEvent.data);
-      if (!message) return;
+  const handleMessage = useCallback(async (event: WebViewMessageEvent) => {
+    const message = parseBridgeMessage(event.nativeEvent.data);
+    if (!message) return;
 
-      switch (message.type) {
-        case "ready":
-          setIsLoading(false);
-          await SplashScreen.hideAsync();
-          break;
+    switch (message.type) {
+      case "ready":
+        setIsLoading(false);
+        await SplashScreen.hideAsync();
+        break;
 
-        case "haptic":
-          await triggerHaptic(message.style);
-          break;
+      case "haptic":
+        await triggerHaptic(message.style);
+        break;
 
-        case "push:register": {
-          const result = await registerForPushNotifications();
-          webViewRef.current?.injectJavaScript(
-            buildWebEvent("chravel:push-token", {
-              token: result.token,
-              error: result.error ?? null,
-            })
-          );
-          break;
-        }
-
-        case "push:unregister":
-          break;
-
-        case "revenuecat:purchase": {
-          const result = await purchasePackage(message.packageId);
-          webViewRef.current?.injectJavaScript(
-            buildWebEvent("chravel:purchase-result", {
-              success: result.success,
-              error: result.error ?? null,
-            })
-          );
-          break;
-        }
-
-        case "revenuecat:restore": {
-          const result = await restorePurchases();
-          webViewRef.current?.injectJavaScript(
-            buildWebEvent("chravel:restore-result", {
-              success: result.success,
-              error: result.error ?? null,
-            })
-          );
-          break;
-        }
-
-        case "revenuecat:getCustomerInfo": {
-          const info = await getCustomerInfo();
-          const activeEntitlements = info
-            ? Object.keys(info.entitlements.active)
-            : [];
-          webViewRef.current?.injectJavaScript(
-            buildWebEvent("chravel:customer-info", {
-              entitlements: activeEntitlements,
-            })
-          );
-          break;
-        }
-
-        case "share": {
-          try {
-            await Share.share({
-              message: message.text ?? "",
-              url: message.url,
-              title: message.title,
-            });
-          } catch {
-            // User cancelled or share failed.
-          }
-          break;
-        }
+      case "push:register": {
+        const result = await registerForPushNotifications();
+        webViewRef.current?.injectJavaScript(
+          buildWebEvent("chravel:push-token", {
+            token: result.token,
+            error: result.error ?? null,
+          }),
+        );
+        break;
       }
-    },
-    []
-  );
+
+      case "push:unregister":
+        break;
+
+      case "revenuecat:purchase": {
+        const result = await purchasePackage(message.packageId);
+        webViewRef.current?.injectJavaScript(
+          buildWebEvent("chravel:purchase-result", {
+            success: result.success,
+            error: result.error ?? null,
+          }),
+        );
+        break;
+      }
+
+      case "revenuecat:restore": {
+        const result = await restorePurchases();
+        webViewRef.current?.injectJavaScript(
+          buildWebEvent("chravel:restore-result", {
+            success: result.success,
+            error: result.error ?? null,
+          }),
+        );
+        break;
+      }
+
+      case "revenuecat:getCustomerInfo": {
+        const info = await getCustomerInfo();
+        const activeEntitlements = info
+          ? Object.keys(info.entitlements.active)
+          : [];
+        webViewRef.current?.injectJavaScript(
+          buildWebEvent("chravel:customer-info", {
+            entitlements: activeEntitlements,
+          }),
+        );
+        break;
+      }
+
+      case "share": {
+        try {
+          await Share.share({
+            message: message.text ?? "",
+            url: message.url,
+            title: message.title,
+          });
+        } catch {
+          // User cancelled or share failed.
+        }
+        break;
+      }
+    }
+  }, []);
 
   // ── URL filter: keep chravel.app in WebView, open rest externally ─
 
-  const shouldLoadRequest = useCallback(
-    (request: { url: string }) => {
-      const url = request.url;
+  const shouldLoadRequest = useCallback((request: { url: string }) => {
+    const url = request.url;
 
-      // Allow navigation within the app and safe schemes.
-      if (ALLOWED_ORIGINS.some((origin) => url.startsWith(origin))) {
+    // Allow navigation within the app and safe schemes.
+    if (ALLOWED_ORIGINS.some((origin) => url.startsWith(origin))) {
+      return true;
+    }
+
+    // Allow OAuth flows to complete inside the WebView.
+    try {
+      const host = new URL(url).hostname;
+      if (ALLOWED_HOSTS.some((h) => host.endsWith(h))) {
         return true;
       }
-
-      // Allow OAuth flows to complete inside the WebView.
-      try {
-        const host = new URL(url).hostname;
-        if (ALLOWED_OAUTH_HOSTS.some((h) => host.endsWith(h))) {
-          return true;
-        }
-      } catch {
-        // Malformed URL — block it.
-        return false;
-      }
-
-      // Everything else opens in the system browser.
-      Linking.openURL(url);
+    } catch {
+      // Malformed URL — block it.
       return false;
-    },
-    []
-  );
+    }
+
+    // Everything else opens in the system browser.
+    Linking.openURL(url);
+    return false;
+  }, []);
 
   // ── Error / offline screen ────────────────────────────────────
 
@@ -238,7 +233,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <StatusBar style="light" />
 
         <WebView
@@ -277,7 +272,7 @@ export default function App() {
             <ActivityIndicator size="large" color="#3A60D0" />
           </View>
         )}
-      </View>
+      </SafeAreaView>
     </SafeAreaProvider>
   );
 }
@@ -285,21 +280,21 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#191817",
   },
   webview: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#191817",
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#000000",
+    backgroundColor: "#191817",
     justifyContent: "center",
     alignItems: "center",
   },
   errorContainer: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#191817",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 32,
