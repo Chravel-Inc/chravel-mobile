@@ -181,29 +181,36 @@ export default function App() {
 
   // ── URL filter: keep chravel.app in WebView, open rest externally ─
 
-  const shouldLoadRequest = useCallback((request: { url: string }) => {
-    const url = request.url;
+  const shouldLoadRequest = useCallback(
+    (request: { url: string; isTopFrame?: boolean }) => {
+      const url = request.url;
 
-    // Allow navigation within the app and safe schemes.
-    if (ALLOWED_ORIGINS.some((origin) => url.startsWith(origin))) {
-      return true;
-    }
-
-    // Allow OAuth flows to complete inside the WebView.
-    try {
-      const host = new URL(url).hostname;
-      if (ALLOWED_HOSTS.some((h) => host.endsWith(h))) {
+      // Always allow subresource loads (iframes, scripts, Stripe, Maps, etc.)
+      if (request.isTopFrame === false) {
         return true;
       }
-    } catch {
-      // Malformed URL — block it.
-      return false;
-    }
 
-    // Everything else opens in the system browser.
-    Linking.openURL(url);
-    return false;
-  }, []);
+      // Allow top-level navigation within chravel.app and safe schemes.
+      if (ALLOWED_ORIGINS.some((origin) => url.startsWith(origin))) {
+        return true;
+      }
+
+      // Allow OAuth flows to complete inside the WebView.
+      try {
+        const host = new URL(url).hostname;
+        if (ALLOWED_HOSTS.some((h) => host.endsWith(h))) {
+          return true;
+        }
+      } catch {
+        return false;
+      }
+
+      // Everything else opens in the system browser.
+      Linking.openURL(url);
+      return false;
+    },
+    [],
+  );
 
   // ── Error / offline screen ────────────────────────────────────
 
@@ -238,7 +245,7 @@ export default function App() {
 
         <WebView
           ref={webViewRef}
-          source={{ uri: WEB_APP_URL }}
+          source={{ uri: `${WEB_APP_URL}/auth` }}
           style={styles.webview}
           injectedJavaScriptBeforeContentLoaded={buildInjectedJS(Platform.OS)}
           onMessage={handleMessage}
