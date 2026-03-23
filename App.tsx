@@ -255,6 +255,13 @@ export default function App() {
           sharedCookiesEnabled={true}
           domStorageEnabled={true}
           onShouldStartLoadWithRequest={shouldLoadRequest}
+          onLoadEnd={() => {
+            // Hide loading overlay once the page finishes loading.
+            // Later, the web app bridge adapter can send { type: "ready" }
+            // for more precise control (e.g. after auth hydration).
+            setIsLoading(false);
+            SplashScreen.hideAsync();
+          }}
           onError={() => setHasError(true)}
           onHttpError={(syntheticEvent) => {
             const { statusCode } = syntheticEvent.nativeEvent;
