@@ -44,6 +44,7 @@ const ALLOWED_ORIGINS = [WEB_APP_URL, "about:", "data:"];
 const ALLOWED_HOSTS = [
   "accounts.google.com",
   "appleid.apple.com",
+  "supabase.co", // OAuth redirect chain
   "js.stripe.com",
   "checkout.stripe.com",
   "api.stripe.com",
