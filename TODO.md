@@ -16,6 +16,9 @@
 - [ ] Bridge adapter: detect `window.ChravelNative` and route native calls through `postMessage` when Capacitor is unavailable
 - [ ] Web app sends `{ type: "ready" }` message after auth hydration completes
 
+## Infrastructure
+- [ ] Set up staging environment for chravel.app (separate Vercel deploy) so mobile app can test against non-production
+
 ## Testing
 - [ ] EAS development build on physical iOS device
 - [ ] EAS development build on physical Android device
