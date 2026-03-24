@@ -1,8 +1,8 @@
-import { ExpoConfig, ConfigContext } from "expo/config";
-
-export default ({ config }: ConfigContext): ExpoConfig => ({
+module.exports = ({ config }) => ({
+  ...config,
   name: "Chravel",
   slug: "chravel",
+  owner: "chravel",
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/icon.png",
@@ -12,7 +12,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   splash: {
     image: "./assets/splash.png",
     resizeMode: "contain",
-    backgroundColor: "#000000",
+    backgroundColor: "#191817",
   },
   assetBundlePatterns: ["**/*"],
   ios: {
@@ -34,14 +34,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         "Chravel uses speech recognition to transcribe your voice input for AI Concierge and chat dictation.",
       ITSAppUsesNonExemptEncryption: false,
     },
-    associatedDomains: [
-      "applinks:chravel.app",
-      "webcredentials:chravel.app",
-    ],
+    associatedDomains: ["applinks:chravel.app", "webcredentials:chravel.app"],
     entitlements: {
-      "aps-environment": "production",
+      "aps-environment": "development",
       "com.apple.developer.applesignin": ["Default"],
-      "com.apple.developer.in-app-payments": ["merchant.com.chravel.app"],
     },
     privacyManifests: {
       NSPrivacyTracking: false,
@@ -145,7 +141,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
-      backgroundColor: "#000000",
+      backgroundColor: "#191817",
     },
     package: "com.chravel.app",
     versionCode: 1,
@@ -178,21 +174,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     "expo-notifications",
-    "expo-haptics",
     [
       "expo-splash-screen",
       {
         image: "./assets/splash.png",
         imageWidth: 200,
         resizeMode: "contain",
-        backgroundColor: "#000000",
+        backgroundColor: "#191817",
       },
     ],
   ],
   extra: {
-    eas: { projectId: "YOUR_EAS_PROJECT_ID" },
+    eas: { projectId: "d9f1051f-932d-44b3-8e22-b4742c250025" },
     webAppUrl: "https://chravel.app",
-    revenueCatIosApiKey: process.env.REVENUECAT_IOS_API_KEY ?? "",
-    revenueCatAndroidApiKey: process.env.REVENUECAT_ANDROID_API_KEY ?? "",
+    revenueCatIosApiKey: process.env.REVENUECAT_IOS_API_KEY || "",
+    revenueCatAndroidApiKey: process.env.REVENUECAT_ANDROID_API_KEY || "",
   },
 });
