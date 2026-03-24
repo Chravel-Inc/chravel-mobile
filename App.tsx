@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  AppState,
+  type AppStateStatus,
   Platform,
   StyleSheet,
   Text,
@@ -13,7 +15,6 @@ import { StatusBar } from "expo-status-bar";
 import * as Notifications from "expo-notifications";
 import * as SplashScreen from "expo-splash-screen";
 import * as Linking from "expo-linking";
-import * as WebBrowser from "expo-web-browser";
 import { Share } from "react-native";
 
 import { WEB_APP_URL, NATIVE_USER_AGENT_SUFFIX } from "./src/constants";
@@ -34,12 +35,18 @@ import {
   restorePurchases,
   getCustomerInfo,
 } from "./src/revenuecat";
+import {
+  isBiometricAvailable,
+  getBiometricType,
+  getBiometricLabel,
+  authenticate,
+  type BiometricType,
+} from "./src/biometrics";
 
-// Keep the splash screen visible until the WebView signals ready.
+// Keep the splash screen visible until the app is ready.
 SplashScreen.preventAutoHideAsync();
 
 // Allowed origins for in-WebView navigation.
-// Everything else opens in the system browser.
 const ALLOWED_ORIGINS = [WEB_APP_URL, "about:", "data:"];
 
 // Hosts that open in an in-app system browser (SFSafariViewController)
@@ -48,7 +55,7 @@ const OAUTH_HOSTS = ["accounts.google.com", "appleid.apple.com"];
 
 // Hosts allowed for top-level navigation inside the WebView.
 const ALLOWED_HOSTS = [
-  "supabase.co", // OAuth redirect chain
+  "supabase.co",
   "js.stripe.com",
   "checkout.stripe.com",
   "api.stripe.com",
@@ -61,6 +68,58 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const oauthInProgress = useRef(false);
+
+  // ── Biometric auth state ────────────────────────────────────────
+  const [isLocked, setIsLocked] = useState(true);
+  const [biometricType, setBiometricType] = useState<BiometricType>("none");
+  const [biometricsAvailable, setBiometricsAvailable] = useState<boolean | null>(null);
+  const appState = useRef(AppState.currentState);
+
+  // Check biometric availability on mount.
+  useEffect(() => {
+    (async () => {
+      const available = await isBiometricAvailable();
+      setBiometricsAvailable(available);
+
+      if (available) {
+        const type = await getBiometricType();
+        setBiometricType(type);
+        // Auto-prompt on launch.
+        const success = await authenticate();
+        if (success) {
+          setIsLocked(false);
+        }
+      } else {
+        // No biometrics — skip lock screen.
+        setIsLocked(false);
+      }
+
+      await SplashScreen.hideAsync();
+    })();
+  }, []);
+
+  // Re-lock when app returns from background.
+  useEffect(() => {
+    const subscription = AppState.addEventListener(
+      "change",
+      async (nextState: AppStateStatus) => {
+        if (
+          appState.current.match(/inactive|background/) &&
+          nextState === "active" &&
+          biometricsAvailable
+        ) {
+          setIsLocked(true);
+          const success = await authenticate();
+          if (success) {
+            setIsLocked(false);
+          }
+        }
+        appState.current = nextState;
+      }
+    );
+
+    return () => subscription.remove();
+  }, [biometricsAvailable]);
 
   // ── Initialize native SDKs ────────────────────────────────────
 
@@ -78,12 +137,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Cold start: check if app was opened via a link.
     getInitialURL().then((path) => {
       if (path) navigateWebView(path);
     });
 
-    // Warm start: listen for links while app is running.
     const unsub = onDeepLink((path) => navigateWebView(path));
     return unsub;
   }, [navigateWebView]);
@@ -114,7 +171,6 @@ export default function App() {
     switch (message.type) {
       case "ready":
         setIsLoading(false);
-        await SplashScreen.hideAsync();
         break;
 
       case "haptic":
@@ -191,12 +247,10 @@ export default function App() {
     (request: { url: string; isTopFrame?: boolean }) => {
       const url = request.url;
 
-      // Always allow subresource loads (iframes, scripts, Stripe, Maps, etc.)
       if (request.isTopFrame === false) {
         return true;
       }
 
-      // Allow top-level navigation within chravel.app and safe schemes.
       if (ALLOWED_ORIGINS.some((origin) => url.startsWith(origin))) {
         return true;
       }
@@ -204,7 +258,6 @@ export default function App() {
       try {
         const host = new URL(url).hostname;
 
-        // Allow OAuth providers and other trusted hosts inside the WebView.
         if (
           OAUTH_HOSTS.some((h) => host.endsWith(h)) ||
           ALLOWED_HOSTS.some((h) => host.endsWith(h))
@@ -215,7 +268,6 @@ export default function App() {
         return false;
       }
 
-      // Everything else opens in the system browser.
       Linking.openURL(url);
       return false;
     },
@@ -228,6 +280,48 @@ export default function App() {
     setHasError(false);
     webViewRef.current?.reload();
   }, []);
+
+  // ── Lock screen ───────────────────────────────────────────────
+
+  const handleUnlock = useCallback(async () => {
+    const success = await authenticate();
+    if (success) {
+      setIsLocked(false);
+    }
+  }, []);
+
+  if (biometricsAvailable === null) {
+    // Still checking biometric availability — show nothing (splash is visible).
+    return null;
+  }
+
+  if (isLocked && biometricsAvailable) {
+    const label = getBiometricLabel(biometricType);
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.lockContainer}>
+          <StatusBar style="light" />
+          <View style={styles.lockContent}>
+            <Text style={styles.lockIcon}>
+              {biometricType === "faceid" ? "\u{1F510}" : "\u{1F513}"}
+            </Text>
+            <Text style={styles.lockTitle}>Chravel</Text>
+            <Text style={styles.lockSubtitle}>
+              Unlock to access your trips
+            </Text>
+            <TouchableOpacity
+              style={styles.unlockButton}
+              onPress={handleUnlock}
+            >
+              <Text style={styles.unlockText}>
+                Unlock with {label}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
 
   if (hasError) {
     return (
@@ -268,11 +362,7 @@ export default function App() {
           domStorageEnabled={true}
           onShouldStartLoadWithRequest={shouldLoadRequest}
           onLoadEnd={() => {
-            // Hide loading overlay once the page finishes loading.
-            // Later, the web app bridge adapter can send { type: "ready" }
-            // for more precise control (e.g. after auth hydration).
             setIsLoading(false);
-            SplashScreen.hideAsync();
           }}
           onError={() => setHasError(true)}
           onHttpError={(syntheticEvent) => {
@@ -308,6 +398,45 @@ const styles = StyleSheet.create({
     backgroundColor: "#191817",
     justifyContent: "center",
     alignItems: "center",
+  },
+  lockContainer: {
+    flex: 1,
+    backgroundColor: "#191817",
+  },
+  lockContent: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 32,
+  },
+  lockIcon: {
+    fontSize: 48,
+    marginBottom: 24,
+  },
+  lockTitle: {
+    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  lockSubtitle: {
+    color: "#999999",
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 40,
+  },
+  unlockButton: {
+    backgroundColor: "#3A60D0",
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 12,
+    minWidth: 220,
+    alignItems: "center",
+  },
+  unlockText: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "600",
   },
   errorContainer: {
     flex: 1,
