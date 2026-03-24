@@ -7,8 +7,11 @@
 - [ ] Set RevenueCat production API keys (iOS + Android) as env vars
 - [ ] Verify `X-Frame-Options` / CSP headers on chravel.app don't block Android WebView
 
+## Code Quality
+- [ ] Refactor App.tsx — extract lock screen, WebView, error screen into separate components
+
 ## App Store Approval
-- [ ] Biometric auth (Face ID / Touch ID) gate before showing WebView
+- [x] Biometric auth (Face ID / Touch ID) gate before showing WebView (PR #4)
 - [ ] Native push permission pre-prompt screen (explain value before OS prompt)
 - [ ] App Store review notes explaining native integrations
 
