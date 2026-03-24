@@ -13,6 +13,7 @@ import { StatusBar } from "expo-status-bar";
 import * as Notifications from "expo-notifications";
 import * as SplashScreen from "expo-splash-screen";
 import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 import { Share } from "react-native";
 
 import { WEB_APP_URL, NATIVE_USER_AGENT_SUFFIX } from "./src/constants";
@@ -41,9 +42,12 @@ SplashScreen.preventAutoHideAsync();
 // Everything else opens in the system browser.
 const ALLOWED_ORIGINS = [WEB_APP_URL, "about:", "data:"];
 
+// Hosts that open in an in-app system browser (SFSafariViewController)
+// for OAuth flows. Google blocks OAuth in embedded WebViews.
+const OAUTH_HOSTS = ["accounts.google.com", "appleid.apple.com"];
+
+// Hosts allowed for top-level navigation inside the WebView.
 const ALLOWED_HOSTS = [
-  "accounts.google.com",
-  "appleid.apple.com",
   "supabase.co", // OAuth redirect chain
   "js.stripe.com",
   "checkout.stripe.com",
@@ -56,6 +60,7 @@ export default function App() {
   const webViewRef = useRef<WebView>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const oauthInProgress = useRef(false);
 
   // ── Initialize native SDKs ────────────────────────────────────
 
@@ -196,10 +201,14 @@ export default function App() {
         return true;
       }
 
-      // Allow OAuth flows to complete inside the WebView.
       try {
         const host = new URL(url).hostname;
-        if (ALLOWED_HOSTS.some((h) => host.endsWith(h))) {
+
+        // Allow OAuth providers and other trusted hosts inside the WebView.
+        if (
+          OAUTH_HOSTS.some((h) => host.endsWith(h)) ||
+          ALLOWED_HOSTS.some((h) => host.endsWith(h))
+        ) {
           return true;
         }
       } catch {
@@ -246,11 +255,11 @@ export default function App() {
 
         <WebView
           ref={webViewRef}
-          source={{ uri: `${WEB_APP_URL}/auth` }}
+          source={{ uri: `${WEB_APP_URL}/auth?native=true` }}
           style={styles.webview}
           injectedJavaScriptBeforeContentLoaded={buildInjectedJS(Platform.OS)}
           onMessage={handleMessage}
-          applicationNameForUserAgent={NATIVE_USER_AGENT_SUFFIX}
+          userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
           mediaPlaybackRequiresUserAction={false}
           allowsInlineMediaPlayback={true}
           mediaCapturePermissionGrantType="grant"
