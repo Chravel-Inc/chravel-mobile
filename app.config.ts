@@ -35,13 +35,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       ITSAppUsesNonExemptEncryption: false,
     },
     associatedDomains: ["applinks:chravel.app", "webcredentials:chravel.app"],
-    // Entitlements require a paid Apple Developer account.
-    // Uncomment for production builds:
-    // entitlements: {
-    //   "aps-environment": "production",
-    //   "com.apple.developer.applesignin": ["Default"],
-    //   "com.apple.developer.in-app-payments": ["merchant.com.chravel.app"],
-    // },
+    entitlements: {
+      "aps-environment": "development",
+      "com.apple.developer.applesignin": ["Default"],
+    },
     privacyManifests: {
       NSPrivacyTracking: false,
       NSPrivacyTrackingDomains: [],
