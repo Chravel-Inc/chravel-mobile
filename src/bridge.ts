@@ -55,6 +55,14 @@ export function buildInjectedJS(platform: string): string {
       isNative: true,
       version: "1.0.0",
     };
+    // Ensure the web app respects safe areas via CSS env() variables.
+    // The viewport-fit=cover meta tag must be set in the web app's index.html
+    // for env(safe-area-inset-*) to work. As a fallback, add bottom padding.
+    (function() {
+      var style = document.createElement('style');
+      style.textContent = 'body { padding-bottom: env(safe-area-inset-bottom, 0px) !important; }';
+      document.head.appendChild(style);
+    })();
     window.dispatchEvent(new Event('chravel:native-ready'));
     true;
   `;
