@@ -1,0 +1,254 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Platform,
+  StyleSheet,
+  View,
+} from "react-native";
+import { WebView, type WebViewMessageEvent } from "react-native-webview";
+import { StatusBar } from "expo-status-bar";
+import * as Notifications from "expo-notifications";
+import * as Linking from "expo-linking";
+import { Share } from "react-native";
+
+import { WEB_APP_URL } from "./constants";
+import { buildInjectedJS, buildWebEvent, parseBridgeMessage } from "./bridge";
+import { registerForPushNotifications, getNotificationDeepLink } from "./notifications";
+import { triggerHaptic } from "./haptics";
+import { getInitialURL, onDeepLink } from "./deepLinking";
+import {
+  configureRevenueCat,
+  purchasePackage,
+  restorePurchases,
+  getCustomerInfo,
+} from "./revenuecat";
+
+const ALLOWED_ORIGINS = [WEB_APP_URL, "about:", "data:"];
+
+const OAUTH_HOSTS = ["accounts.google.com", "appleid.apple.com"];
+
+const ALLOWED_HOSTS = [
+  "supabase.co",
+  "js.stripe.com",
+  "checkout.stripe.com",
+  "api.stripe.com",
+  "maps.googleapis.com",
+  "maps.google.com",
+];
+
+interface ChravelWebViewProps {
+  onError: () => void;
+}
+
+export function ChravelWebView({ onError }: ChravelWebViewProps) {
+  const webViewRef = useRef<WebView>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // ── Initialize native SDKs ──────────────────────────────────
+
+  useEffect(() => {
+    configureRevenueCat();
+  }, []);
+
+  // ── Deep linking ────────────────────────────────────────────
+
+  const navigateWebView = useCallback((path: string) => {
+    const fullUrl = `${WEB_APP_URL}${path}`;
+    webViewRef.current?.injectJavaScript(
+      `window.location.href = ${JSON.stringify(fullUrl)}; true;`,
+    );
+  }, []);
+
+  useEffect(() => {
+    getInitialURL().then((path) => {
+      if (path) navigateWebView(path);
+    });
+
+    const unsub = onDeepLink((path) => navigateWebView(path));
+    return unsub;
+  }, [navigateWebView]);
+
+  // ── Push notification taps ──────────────────────────────────
+
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const data = response.notification.request.content.data as Record<
+          string,
+          unknown
+        >;
+        const path = getNotificationDeepLink(data);
+        if (path) navigateWebView(path);
+      },
+    );
+
+    return () => subscription.remove();
+  }, [navigateWebView]);
+
+  // ── Bridge message handler ──────────────────────────────────
+
+  const handleMessage = useCallback(async (event: WebViewMessageEvent) => {
+    const message = parseBridgeMessage(event.nativeEvent.data);
+    if (!message) return;
+
+    switch (message.type) {
+      case "ready":
+        setIsLoading(false);
+        break;
+
+      case "haptic":
+        await triggerHaptic(message.style);
+        break;
+
+      case "push:register": {
+        const result = await registerForPushNotifications();
+        webViewRef.current?.injectJavaScript(
+          buildWebEvent("chravel:push-token", {
+            token: result.token,
+            error: result.error ?? null,
+          }),
+        );
+        break;
+      }
+
+      case "push:unregister":
+        break;
+
+      case "revenuecat:purchase": {
+        const result = await purchasePackage(message.packageId);
+        webViewRef.current?.injectJavaScript(
+          buildWebEvent("chravel:purchase-result", {
+            success: result.success,
+            error: result.error ?? null,
+          }),
+        );
+        break;
+      }
+
+      case "revenuecat:restore": {
+        const result = await restorePurchases();
+        webViewRef.current?.injectJavaScript(
+          buildWebEvent("chravel:restore-result", {
+            success: result.success,
+            error: result.error ?? null,
+          }),
+        );
+        break;
+      }
+
+      case "revenuecat:getCustomerInfo": {
+        const info = await getCustomerInfo();
+        const activeEntitlements = info
+          ? Object.keys(info.entitlements.active)
+          : [];
+        webViewRef.current?.injectJavaScript(
+          buildWebEvent("chravel:customer-info", {
+            entitlements: activeEntitlements,
+          }),
+        );
+        break;
+      }
+
+      case "share": {
+        try {
+          await Share.share({
+            message: message.text ?? "",
+            url: message.url,
+            title: message.title,
+          });
+        } catch {
+          // User cancelled or share failed.
+        }
+        break;
+      }
+    }
+  }, []);
+
+  // ── URL filter ──────────────────────────────────────────────
+
+  const shouldLoadRequest = useCallback(
+    (request: { url: string; isTopFrame?: boolean }) => {
+      const url = request.url;
+
+      if (request.isTopFrame === false) {
+        return true;
+      }
+
+      if (ALLOWED_ORIGINS.some((origin) => url.startsWith(origin))) {
+        return true;
+      }
+
+      try {
+        const host = new URL(url).hostname;
+        if (
+          OAUTH_HOSTS.some((h) => host.endsWith(h)) ||
+          ALLOWED_HOSTS.some((h) => host.endsWith(h))
+        ) {
+          return true;
+        }
+      } catch {
+        return false;
+      }
+
+      Linking.openURL(url);
+      return false;
+    },
+    [],
+  );
+
+  // ── Render ──────────────────────────────────────────────────
+
+  return (
+    <View style={styles.container}>
+      <StatusBar style="light" translucent backgroundColor="transparent" />
+
+      <WebView
+        ref={webViewRef}
+        source={{ uri: WEB_APP_URL }}
+        style={styles.webview}
+        injectedJavaScriptBeforeContentLoaded={buildInjectedJS(Platform.OS)}
+        onMessage={handleMessage}
+        userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+        mediaPlaybackRequiresUserAction={false}
+        allowsInlineMediaPlayback={true}
+        mediaCapturePermissionGrantType="grant"
+        geolocationEnabled={true}
+        sharedCookiesEnabled={true}
+        domStorageEnabled={true}
+        onShouldStartLoadWithRequest={shouldLoadRequest}
+        onLoadEnd={() => setIsLoading(false)}
+        onError={() => onError()}
+        onHttpError={(syntheticEvent) => {
+          const { statusCode } = syntheticEvent.nativeEvent;
+          if (statusCode >= 500) onError();
+        }}
+        pullToRefreshEnabled={Platform.OS === "android"}
+        allowsBackForwardNavigationGestures={true}
+        bounces={true}
+      />
+
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#3A60D0" />
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#191817",
+  },
+  webview: {
+    flex: 1,
+    backgroundColor: "#191817",
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#191817",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
