@@ -344,12 +344,12 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
-        <StatusBar style="light" />
+      <View style={styles.container}>
+        <StatusBar style="light" translucent backgroundColor="transparent" />
 
         <WebView
           ref={webViewRef}
-          source={{ uri: `${WEB_APP_URL}/auth?native=true` }}
+          source={{ uri: WEB_APP_URL }}
           style={styles.webview}
           injectedJavaScriptBeforeContentLoaded={buildInjectedJS(Platform.OS)}
           onMessage={handleMessage}
@@ -379,7 +379,7 @@ export default function App() {
             <ActivityIndicator size="large" color="#3A60D0" />
           </View>
         )}
-      </SafeAreaView>
+      </View>
     </SafeAreaProvider>
   );
 }
