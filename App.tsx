@@ -42,6 +42,7 @@ import {
   authenticate,
   type BiometricType,
 } from "./src/biometrics";
+import { PushPrePrompt } from "./src/PushPrePrompt";
 
 // Keep the splash screen visible until the app is ready.
 SplashScreen.preventAutoHideAsync();
@@ -71,6 +72,7 @@ export default function App() {
 
   // ── Biometric auth state ────────────────────────────────────────
   const [isLocked, setIsLocked] = useState(true);
+  const [showPushPrompt, setShowPushPrompt] = useState(false);
   const [biometricType, setBiometricType] = useState<BiometricType>("none");
   const [biometricsAvailable, setBiometricsAvailable] = useState<boolean | null>(null);
   const appState = useRef(AppState.currentState);
@@ -88,10 +90,12 @@ export default function App() {
         const success = await authenticate();
         if (success) {
           setIsLocked(false);
+          setShowPushPrompt(true);
         }
       } else {
         // No biometrics — skip lock screen.
         setIsLocked(false);
+        setShowPushPrompt(true);
       }
 
       await SplashScreen.hideAsync();
@@ -319,6 +323,14 @@ export default function App() {
             </TouchableOpacity>
           </View>
         </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+
+  if (showPushPrompt) {
+    return (
+      <SafeAreaProvider>
+        <PushPrePrompt onComplete={() => setShowPushPrompt(false)} />
       </SafeAreaProvider>
     );
   }
