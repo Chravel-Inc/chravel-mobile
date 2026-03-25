@@ -1,8 +1,8 @@
-import { ExpoConfig, ConfigContext } from "expo/config";
-
-export default ({ config }: ConfigContext): ExpoConfig => ({
+module.exports = ({ config }) => ({
+  ...config,
   name: "Chravel",
   slug: "chravel",
+  owner: "chravel",
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/icon.png",
@@ -36,7 +36,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     associatedDomains: ["applinks:chravel.app", "webcredentials:chravel.app"],
     entitlements: {
-      "aps-environment": "development",
+      "aps-environment": "production",
       "com.apple.developer.applesignin": ["Default"],
     },
     privacyManifests: {
@@ -69,8 +69,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           ],
         },
         {
-          NSPrivacyCollectedDataType:
-            "NSPrivacyCollectedDataTypePhotosOrVideos",
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePhotosOrVideos",
           NSPrivacyCollectedDataTypeLinked: true,
           NSPrivacyCollectedDataTypeTracking: false,
           NSPrivacyCollectedDataTypePurposes: [
@@ -78,8 +77,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           ],
         },
         {
-          NSPrivacyCollectedDataType:
-            "NSPrivacyCollectedDataTypePreciseLocation",
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePreciseLocation",
           NSPrivacyCollectedDataTypeLinked: true,
           NSPrivacyCollectedDataTypeTracking: false,
           NSPrivacyCollectedDataTypePurposes: [
@@ -95,8 +93,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           ],
         },
         {
-          NSPrivacyCollectedDataType:
-            "NSPrivacyCollectedDataTypeProductInteraction",
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeProductInteraction",
           NSPrivacyCollectedDataTypeLinked: true,
           NSPrivacyCollectedDataTypeTracking: false,
           NSPrivacyCollectedDataTypePurposes: [
@@ -113,8 +110,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           ],
         },
         {
-          NSPrivacyCollectedDataType:
-            "NSPrivacyCollectedDataTypePurchaseHistory",
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePurchaseHistory",
           NSPrivacyCollectedDataTypeLinked: true,
           NSPrivacyCollectedDataTypeTracking: false,
           NSPrivacyCollectedDataTypePurposes: [
@@ -132,8 +128,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           NSPrivacyAccessedAPITypeReasons: ["C617.1"],
         },
         {
-          NSPrivacyAccessedAPIType:
-            "NSPrivacyAccessedAPICategorySystemBootTime",
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategorySystemBootTime",
           NSPrivacyAccessedAPITypeReasons: ["35F9.1"],
         },
         {
@@ -190,9 +185,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
   ],
   extra: {
-    eas: { projectId: "YOUR_EAS_PROJECT_ID" },
+    eas: { projectId: "d9f1051f-932d-44b3-8e22-b4742c250025" },
     webAppUrl: "https://chravel.app",
-    revenueCatIosApiKey: process.env.REVENUECAT_IOS_API_KEY ?? "",
-    revenueCatAndroidApiKey: process.env.REVENUECAT_ANDROID_API_KEY ?? "",
+    revenueCatIosApiKey: process.env.REVENUECAT_IOS_API_KEY || "",
+    revenueCatAndroidApiKey: process.env.REVENUECAT_ANDROID_API_KEY || "",
   },
 });
