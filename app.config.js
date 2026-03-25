@@ -2,7 +2,7 @@ module.exports = ({ config }) => ({
   ...config,
   name: "Chravel",
   slug: "chravel",
-  owner: "chravel",
+  owner: "meechyourgoals",
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/icon.png",
@@ -69,7 +69,8 @@ module.exports = ({ config }) => ({
           ],
         },
         {
-          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePhotosOrVideos",
+          NSPrivacyCollectedDataType:
+            "NSPrivacyCollectedDataTypePhotosOrVideos",
           NSPrivacyCollectedDataTypeLinked: true,
           NSPrivacyCollectedDataTypeTracking: false,
           NSPrivacyCollectedDataTypePurposes: [
@@ -77,7 +78,8 @@ module.exports = ({ config }) => ({
           ],
         },
         {
-          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePreciseLocation",
+          NSPrivacyCollectedDataType:
+            "NSPrivacyCollectedDataTypePreciseLocation",
           NSPrivacyCollectedDataTypeLinked: true,
           NSPrivacyCollectedDataTypeTracking: false,
           NSPrivacyCollectedDataTypePurposes: [
@@ -93,7 +95,8 @@ module.exports = ({ config }) => ({
           ],
         },
         {
-          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeProductInteraction",
+          NSPrivacyCollectedDataType:
+            "NSPrivacyCollectedDataTypeProductInteraction",
           NSPrivacyCollectedDataTypeLinked: true,
           NSPrivacyCollectedDataTypeTracking: false,
           NSPrivacyCollectedDataTypePurposes: [
@@ -110,7 +113,8 @@ module.exports = ({ config }) => ({
           ],
         },
         {
-          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePurchaseHistory",
+          NSPrivacyCollectedDataType:
+            "NSPrivacyCollectedDataTypePurchaseHistory",
           NSPrivacyCollectedDataTypeLinked: true,
           NSPrivacyCollectedDataTypeTracking: false,
           NSPrivacyCollectedDataTypePurposes: [
@@ -128,7 +132,8 @@ module.exports = ({ config }) => ({
           NSPrivacyAccessedAPITypeReasons: ["C617.1"],
         },
         {
-          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategorySystemBootTime",
+          NSPrivacyAccessedAPIType:
+            "NSPrivacyAccessedAPICategorySystemBootTime",
           NSPrivacyAccessedAPITypeReasons: ["35F9.1"],
         },
         {
@@ -185,7 +190,7 @@ module.exports = ({ config }) => ({
     ],
   ],
   extra: {
-    eas: { projectId: "d9f1051f-932d-44b3-8e22-b4742c250025" },
+    eas: { projectId: "a543c88d-bece-4433-9aa2-d0e842a5c927" },
     webAppUrl: "https://chravel.app",
     revenueCatIosApiKey: process.env.REVENUECAT_IOS_API_KEY || "",
     revenueCatAndroidApiKey: process.env.REVENUECAT_ANDROID_API_KEY || "",
