@@ -1,7 +1,7 @@
 module.exports = ({ config }) => ({
   ...config,
   name: "Chravel",
-  slug: "chravel",
+  slug: "chravel-mobile",
   owner: "meechyourgoals",
   version: "1.0.0",
   orientation: "portrait",
