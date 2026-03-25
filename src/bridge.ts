@@ -55,6 +55,15 @@ export function buildInjectedJS(platform: string): string {
       isNative: true,
       version: "1.0.0",
     };
+    // Add bottom safe area spacing for iOS home indicator.
+    (function() {
+      var style = document.createElement('style');
+      style.textContent = [
+        '#root { padding-bottom: env(safe-area-inset-bottom, 34px) !important; }',
+        'html { padding-bottom: env(safe-area-inset-bottom, 34px) !important; }',
+      ].join('\\n');
+      document.head.appendChild(style);
+    })();
     window.dispatchEvent(new Event('chravel:native-ready'));
     true;
   `;
