@@ -44,6 +44,8 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   const webViewRef = useRef<WebView>(null);
   const [isLoading, setIsLoading] = useState(true);
   const wasOnAuthRef = useRef(true); // WebView starts at /auth
+  const currentUrlRef = useRef(`${WEB_APP_URL}/auth`);
+  const isAuthRedirectRef = useRef(false); // true after OAuth deep link
 
   // ── Initialize native SDKs ──────────────────────────────────
 
@@ -67,6 +69,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
 
     const unsub = onDeepLink((path) => {
       if (path.startsWith("/auth-callback")) {
+        isAuthRedirectRef.current = true;
         setIsLoading(true);
         const hash = path.includes("#") ? path.substring(path.indexOf("#")) : "";
         console.log("[DeepLink] Auth callback, hash:", hash ? "present" : "empty");
@@ -112,7 +115,14 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
 
     switch (message.type) {
       case "ready":
-        setIsLoading(false);
+        // After OAuth redirect, keep overlay up until we leave /auth.
+        // On normal load (no redirect), dismiss immediately.
+        if (isAuthRedirectRef.current && currentUrlRef.current.includes("/auth")) {
+          // Still processing tokens on /auth — wait
+        } else {
+          isAuthRedirectRef.current = false;
+          setIsLoading(false);
+        }
         break;
 
       case "haptic":
@@ -263,12 +273,20 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         onNavigationStateChange={(navState) => {
           console.log("[WebView] URL:", navState.url, "loading:", navState.loading);
           const url = navState.url ?? "";
+          currentUrlRef.current = url;
           const onAuth = url.includes("/auth");
 
-          // Post-login: user just left /auth → show overlay to hide
-          // the marketing page flash. Clears when web app sends "ready".
           if (wasOnAuthRef.current && !onAuth && url.startsWith(WEB_APP_URL)) {
-            setIsLoading(true);
+            if (isAuthRedirectRef.current) {
+              // OAuth just completed — dismiss overlay now that we've
+              // left /auth and landed on the authenticated page.
+              isAuthRedirectRef.current = false;
+              setIsLoading(false);
+            } else {
+              // Normal navigation away from /auth — show overlay to
+              // hide the marketing page flash.
+              setIsLoading(true);
+            }
           }
 
           wasOnAuthRef.current = onAuth;
