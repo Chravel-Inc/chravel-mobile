@@ -66,9 +66,9 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
     });
 
     const unsub = onDeepLink((path) => {
-      // OAuth callback: show loading overlay while the WebView
-      // processes the auth tokens.
-      if (path.startsWith("/auth")) {
+      // OAuth callback: dismiss the in-app browser and show loading
+      // overlay while the WebView processes the auth tokens.
+      if (path.startsWith("/auth-callback")) {
         setIsLoading(true);
       }
       navigateWebView(path);
@@ -200,11 +200,9 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         if (url.includes("supabase.co") && url.includes("redirect_to=")) {
           oauthUrl = url.replace(
             /redirect_to=[^&]+/,
-            `redirect_to=${encodeURIComponent("https://chravel.app/auth")}`,
+            `redirect_to=${encodeURIComponent("chravel://auth-callback")}`,
           );
         }
-        // Open in Safari (not SFSafariViewController) so the chravel://
-        // deep link redirect naturally returns the user to the app.
         Linking.openURL(oauthUrl);
         return false;
       }
