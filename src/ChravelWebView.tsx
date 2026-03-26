@@ -66,10 +66,21 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
     });
 
     const unsub = onDeepLink((path) => {
-      // OAuth callback: dismiss the in-app browser and show loading
-      // overlay while the WebView processes the auth tokens.
       if (path.startsWith("/auth-callback")) {
         setIsLoading(true);
+        const hash = path.includes("#") ? path.substring(path.indexOf("#")) : "";
+        console.log("[DeepLink] Auth callback, hash:", hash ? "present" : "empty");
+        if (hash) {
+          // Inject the token hash into the current page (/auth) so
+          // Supabase JS detects the session tokens without navigating.
+          webViewRef.current?.injectJavaScript(
+            `window.location.href = ${JSON.stringify(`${WEB_APP_URL}/auth${hash}`)}; true;`,
+          );
+        } else {
+          // No hash — reload auth page to re-check session
+          navigateWebView("/auth");
+        }
+        return;
       }
       navigateWebView(path);
     });
@@ -198,11 +209,13 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         // custom scheme instead of loading chravel.app in the browser.
         let oauthUrl = url;
         if (url.includes("supabase.co") && url.includes("redirect_to=")) {
+          const callbackUrl = `chravel://auth-callback/${Date.now()}`;
           oauthUrl = url.replace(
             /redirect_to=[^&]+/,
-            `redirect_to=${encodeURIComponent("chravel://auth-callback")}`,
+            `redirect_to=${encodeURIComponent(callbackUrl)}`,
           );
         }
+        console.log("[OAuth] Opening URL:", oauthUrl);
         Linking.openURL(oauthUrl);
         return false;
       }

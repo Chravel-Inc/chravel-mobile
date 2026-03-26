@@ -14,10 +14,13 @@ export function parseDeepLinkUrl(url: string): string | null {
     const parsed = new URL(url);
 
     if (parsed.protocol === "chravel:") {
-      const path = parsed.pathname.startsWith("/")
-        ? parsed.pathname
-        : `/${parsed.pathname}`;
-      return path + parsed.search + parsed.hash;
+      // For custom schemes, URL parser treats the part after :// as
+      // the hostname (e.g. chravel://auth-callback/123 → host="auth-callback").
+      // Reconstruct the full path from hostname + pathname.
+      const host = parsed.hostname || "";
+      const pathname = parsed.pathname || "";
+      const fullPath = host ? `/${host}${pathname}` : pathname;
+      return fullPath + parsed.search + parsed.hash;
     }
 
     if (
