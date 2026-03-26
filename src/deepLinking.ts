@@ -17,14 +17,14 @@ export function parseDeepLinkUrl(url: string): string | null {
       const path = parsed.pathname.startsWith("/")
         ? parsed.pathname
         : `/${parsed.pathname}`;
-      return path + parsed.search;
+      return path + parsed.search + parsed.hash;
     }
 
     if (
       parsed.hostname === "chravel.app" ||
       parsed.hostname === "www.chravel.app"
     ) {
-      return parsed.pathname + parsed.search;
+      return parsed.pathname + parsed.search + parsed.hash;
     }
 
     if (parsed.pathname.startsWith("/")) {

@@ -43,6 +43,7 @@ interface ChravelWebViewProps {
 export function ChravelWebView({ onError }: ChravelWebViewProps) {
   const webViewRef = useRef<WebView>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const wasOnAuthRef = useRef(true); // WebView starts at /auth
 
   // ── Initialize native SDKs ──────────────────────────────────
 
@@ -64,7 +65,14 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
       if (path) navigateWebView(path);
     });
 
-    const unsub = onDeepLink((path) => navigateWebView(path));
+    const unsub = onDeepLink((path) => {
+      // OAuth callback: show loading overlay while the WebView
+      // processes the auth tokens.
+      if (path.startsWith("/auth")) {
+        setIsLoading(true);
+      }
+      navigateWebView(path);
+    });
     return unsub;
   }, [navigateWebView]);
 
@@ -186,7 +194,18 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         (url.includes("supabase.co") && url.includes("provider=google"));
 
       if (isOAuthURL) {
-        WebBrowser.openBrowserAsync(url);
+        // Rewrite the Supabase redirect_to so OAuth lands on our
+        // custom scheme instead of loading chravel.app in the browser.
+        let oauthUrl = url;
+        if (url.includes("supabase.co") && url.includes("redirect_to=")) {
+          oauthUrl = url.replace(
+            /redirect_to=[^&]+/,
+            `redirect_to=${encodeURIComponent("https://chravel.app/auth")}`,
+          );
+        }
+        // Open in Safari (not SFSafariViewController) so the chravel://
+        // deep link redirect naturally returns the user to the app.
+        Linking.openURL(oauthUrl);
         return false;
       }
 
@@ -232,6 +251,16 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         }}
         onNavigationStateChange={(navState) => {
           console.log("[WebView] URL:", navState.url, "loading:", navState.loading);
+          const url = navState.url ?? "";
+          const onAuth = url.includes("/auth");
+
+          // Post-login: user just left /auth → show overlay to hide
+          // the marketing page flash. Clears when web app sends "ready".
+          if (wasOnAuthRef.current && !onAuth && url.startsWith(WEB_APP_URL)) {
+            setIsLoading(true);
+          }
+
+          wasOnAuthRef.current = onAuth;
         }}
         onLoadEnd={() => {
           // Don't hide the overlay here — wait for the "ready" bridge
