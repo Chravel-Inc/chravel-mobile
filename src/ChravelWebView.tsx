@@ -204,7 +204,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
 
       <WebView
         ref={webViewRef}
-        source={{ uri: WEB_APP_URL }}
+        source={{ uri: `${WEB_APP_URL}/auth` }}
         style={styles.webview}
         injectedJavaScriptBeforeContentLoaded={buildInjectedJS(Platform.OS)}
         onMessage={handleMessage}
@@ -214,9 +214,22 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         mediaCapturePermissionGrantType="grant"
         geolocationEnabled={true}
         sharedCookiesEnabled={true}
+        thirdPartyCookiesEnabled={true}
         domStorageEnabled={true}
-        onShouldStartLoadWithRequest={shouldLoadRequest}
-        onLoadEnd={() => setIsLoading(false)}
+        javaScriptCanOpenWindowsAutomatically={true}
+        onShouldStartLoadWithRequest={(request) => {
+          console.log("[WebView] Navigation:", request.url, "isTopFrame:", request.isTopFrame);
+          return shouldLoadRequest(request);
+        }}
+        onNavigationStateChange={(navState) => {
+          console.log("[WebView] URL:", navState.url, "loading:", navState.loading);
+        }}
+        onLoadEnd={() => {
+          // Don't hide the overlay here — wait for the "ready" bridge
+          // message from the web app (sent after auth hydration).
+          // Fallback: hide after 5 seconds if the signal never arrives.
+          setTimeout(() => setIsLoading(false), 10000);
+        }}
         onError={() => onError()}
         onHttpError={(syntheticEvent) => {
           const { statusCode } = syntheticEvent.nativeEvent;
