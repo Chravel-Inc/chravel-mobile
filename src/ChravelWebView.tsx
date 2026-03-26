@@ -9,6 +9,7 @@ import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import { StatusBar } from "expo-status-bar";
 import * as Notifications from "expo-notifications";
 import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 import { Share } from "react-native";
 
 import { WEB_APP_URL } from "./constants";
@@ -25,7 +26,6 @@ import {
 
 const ALLOWED_ORIGINS = [WEB_APP_URL, "about:", "data:"];
 
-const OAUTH_HOSTS = ["accounts.google.com", "appleid.apple.com"];
 
 const ALLOWED_HOSTS = [
   "supabase.co",
@@ -178,12 +178,21 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         return true;
       }
 
+      // Intercept OAuth URLs — Google blocks sign-in inside embedded WebViews.
+      // Check raw URL string first (catches redirects before hostname resolves).
+      const isOAuthURL =
+        url.includes("accounts.google.com") ||
+        url.includes("appleid.apple.com") ||
+        (url.includes("supabase.co") && url.includes("provider=google"));
+
+      if (isOAuthURL) {
+        WebBrowser.openBrowserAsync(url);
+        return false;
+      }
+
       try {
         const host = new URL(url).hostname;
-        if (
-          OAUTH_HOSTS.some((h) => host.endsWith(h)) ||
-          ALLOWED_HOSTS.some((h) => host.endsWith(h))
-        ) {
+        if (ALLOWED_HOSTS.some((h) => host.endsWith(h))) {
           return true;
         }
       } catch {
