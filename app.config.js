@@ -180,6 +180,13 @@ module.exports = ({ config }) => ({
   plugins: [
     "expo-notifications",
     [
+      "expo-av",
+      {
+        microphonePermission:
+          "ChravelApp needs microphone access for voice conversations with AI Concierge",
+      },
+    ],
+    [
       "expo-splash-screen",
       {
         image: "./assets/splash.png",

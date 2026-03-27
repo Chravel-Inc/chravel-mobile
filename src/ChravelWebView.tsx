@@ -24,6 +24,7 @@ import {
   restorePurchases,
   getCustomerInfo,
 } from "./revenuecat";
+import { VoiceBridge, type VoiceBridgeMessage } from "./voiceBridge";
 
 const ALLOWED_ORIGINS = [WEB_APP_URL, "about:", "data:"];
 
@@ -47,11 +48,20 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   const wasOnAuthRef = useRef(true); // WebView starts at /auth
   const currentUrlRef = useRef(`${WEB_APP_URL}/auth`);
   const isAuthRedirectRef = useRef(false); // true after OAuth deep link
+  const voiceBridgeRef = useRef(new VoiceBridge());
 
   // ── Initialize native SDKs ──────────────────────────────────
 
   useEffect(() => {
     configureRevenueCat();
+  }, []);
+
+  // ── Voice bridge lifecycle ────────────────────────────────────
+
+  useEffect(() => {
+    return () => {
+      voiceBridgeRef.current.dispose();
+    };
   }, []);
 
   // ── Deep linking ────────────────────────────────────────────
@@ -195,6 +205,24 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         } catch {
           // User cancelled or share failed.
         }
+        break;
+      }
+
+      // Voice bridge messages
+      case "voice:request-permission":
+      case "voice:start-capture":
+      case "voice:stop-capture":
+      case "voice:play-audio":
+      case "voice:flush-playback": {
+        const bridge = voiceBridgeRef.current;
+        // Lazily attach the sendEvent function so the bridge can
+        // inject JS events back into the WebView.
+        bridge.attach((eventName, detail) => {
+          webViewRef.current?.injectJavaScript(
+            buildWebEvent(eventName, detail),
+          );
+        });
+        await bridge.handle(message as VoiceBridgeMessage);
         break;
       }
     }
