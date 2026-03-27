@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AppState } from "react-native";
+import { AppState, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as SplashScreen from "expo-splash-screen";
 
@@ -50,7 +50,7 @@ export default function App() {
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextState) => {
       if (
-        appStateRef.current.match(/background/) &&
+        appStateRef.current.match(/inactive|background/) &&
         nextState === "active" &&
         biometricType
       ) {
@@ -66,33 +66,35 @@ export default function App() {
 
   if (!biometricsChecked) return null;
 
-  if (locked && biometricType) {
-    return (
-      <SafeAreaProvider>
-        <LockScreen biometricType={biometricType} onUnlock={promptBiometric} />
-      </SafeAreaProvider>
-    );
-  }
+  let content;
 
   if (showPushPrompt) {
-    return (
-      <SafeAreaProvider>
-        <PushPrePrompt onComplete={() => setShowPushPrompt(false)} />
-      </SafeAreaProvider>
-    );
-  }
-
-  if (hasError) {
-    return (
-      <SafeAreaProvider>
-        <ErrorScreen onRetry={() => setHasError(false)} />
-      </SafeAreaProvider>
-    );
+    content = <PushPrePrompt onComplete={() => setShowPushPrompt(false)} />;
+  } else if (hasError) {
+    content = <ErrorScreen onRetry={() => setHasError(false)} />;
+  } else {
+    content = <ChravelWebView onError={() => setHasError(true)} />;
   }
 
   return (
     <SafeAreaProvider>
-      <ChravelWebView onError={() => setHasError(true)} />
+      <View style={styles.container}>
+        {content}
+        {locked && biometricType && (
+          <View style={styles.lockOverlay}>
+            <LockScreen biometricType={biometricType} onUnlock={promptBiometric} />
+          </View>
+        )}
+      </View>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  lockOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+});
