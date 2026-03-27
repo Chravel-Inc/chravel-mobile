@@ -12,13 +12,14 @@ import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { Share } from "react-native";
 
-import { WEB_APP_URL } from "./constants";
+import { WEB_APP_URL, NATIVE_USER_AGENT_SUFFIX } from "./constants";
 import { buildInjectedJS, buildWebEvent, parseBridgeMessage } from "./bridge";
 import { registerForPushNotifications, getNotificationDeepLink } from "./notifications";
 import { triggerHaptic } from "./haptics";
 import { getInitialURL, onDeepLink } from "./deepLinking";
 import {
   configureRevenueCat,
+  identifyUser,
   purchasePackage,
   restorePurchases,
   getCustomerInfo,
@@ -72,7 +73,6 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         isAuthRedirectRef.current = true;
         setIsLoading(true);
         const hash = path.includes("#") ? path.substring(path.indexOf("#")) : "";
-        console.log("[DeepLink] Auth callback, hash:", hash ? "present" : "empty");
         if (hash) {
           // Inject the token hash into the current page (/auth) so
           // Supabase JS detects the session tokens without navigating.
@@ -141,6 +141,13 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
       }
 
       case "push:unregister":
+        webViewRef.current?.injectJavaScript(
+          buildWebEvent("chravel:push-unregistered", { success: true }),
+        );
+        break;
+
+      case "revenuecat:identify":
+        await identifyUser(message.userId);
         break;
 
       case "revenuecat:purchase": {
@@ -225,7 +232,6 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
             `redirect_to=${encodeURIComponent(callbackUrl)}`,
           );
         }
-        console.log("[OAuth] Opening URL:", oauthUrl);
         Linking.openURL(oauthUrl);
         return false;
       }
@@ -257,7 +263,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         style={styles.webview}
         injectedJavaScriptBeforeContentLoaded={buildInjectedJS(Platform.OS)}
         onMessage={handleMessage}
-        userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+        userAgent={`Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1 ${NATIVE_USER_AGENT_SUFFIX}`}
         mediaPlaybackRequiresUserAction={false}
         allowsInlineMediaPlayback={true}
         mediaCapturePermissionGrantType="grant"
@@ -266,12 +272,8 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         thirdPartyCookiesEnabled={true}
         domStorageEnabled={true}
         javaScriptCanOpenWindowsAutomatically={true}
-        onShouldStartLoadWithRequest={(request) => {
-          console.log("[WebView] Navigation:", request.url, "isTopFrame:", request.isTopFrame);
-          return shouldLoadRequest(request);
-        }}
+        onShouldStartLoadWithRequest={(request) => shouldLoadRequest(request)}
         onNavigationStateChange={(navState) => {
-          console.log("[WebView] URL:", navState.url, "loading:", navState.loading);
           const url = navState.url ?? "";
           currentUrlRef.current = url;
           const onAuth = url.includes("/auth");
@@ -295,12 +297,15 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
           // Don't hide the overlay here — wait for the "ready" bridge
           // message from the web app (sent after auth hydration).
           // Fallback: hide after 5 seconds if the signal never arrives.
-          setTimeout(() => setIsLoading(false), 10000);
+          setTimeout(() => setIsLoading(false), 5000);
         }}
         onError={() => onError()}
         onHttpError={(syntheticEvent) => {
           const { statusCode } = syntheticEvent.nativeEvent;
           if (statusCode >= 500) onError();
+        }}
+        onContentProcessDidTerminate={() => {
+          webViewRef.current?.reload();
         }}
         pullToRefreshEnabled={Platform.OS === "android"}
         allowsBackForwardNavigationGestures={true}

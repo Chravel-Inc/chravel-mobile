@@ -20,6 +20,7 @@ export type BridgeMessage =
   | { type: "revenuecat:restore" }
   | { type: "revenuecat:getCustomerInfo" }
   | { type: "share"; text?: string; url?: string; title?: string }
+  | { type: "revenuecat:identify"; userId: string }
   | { type: "ready" }; // web app signals it has loaded
 
 export type HapticStyle =

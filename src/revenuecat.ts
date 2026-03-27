@@ -22,7 +22,6 @@ export async function configureRevenueCat(): Promise<void> {
       : Constants.expoConfig?.extra?.revenueCatAndroidApiKey;
 
   if (!apiKey) {
-    console.warn("[RevenueCat] No API key configured for", Platform.OS);
     return;
   }
 
