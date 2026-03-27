@@ -10,9 +10,14 @@
 
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from "expo-av";
 import { File as FSFile } from "expo-file-system";
+import { Platform } from "react-native";
 
 import { INPUT_SAMPLE_RATE, CAPTURE_INTERVAL_MS } from "./constants";
-import { calculateRmsFromPcm16Base64 } from "./utils";
+import {
+  base64ToUint8Array,
+  calculateRmsFromPcm16Base64,
+  uint8ArrayToBase64,
+} from "./utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -85,6 +90,11 @@ export class AudioCaptureManager {
 
   async start(onData: OnAudioDataCallback): Promise<void> {
     if (this._isRecording) return;
+    if (Platform.OS === "android") {
+      throw new Error(
+        "Android capture requires PCM WAV input, which expo-av cannot produce.",
+      );
+    }
 
     this.onAudioData = onData;
     this._isRecording = true;
@@ -212,47 +222,7 @@ export class AudioCaptureManager {
  */
 function stripWavHeaderBase64(wavBase64: string): string | null {
   if (wavBase64.length < 60) return null;
-
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  const lookup = new Uint8Array(256);
-  for (let i = 0; i < chars.length; i++) {
-    lookup[chars.charCodeAt(i)] = i;
-  }
-
-  // Decode
-  let len = wavBase64.length;
-  if (wavBase64[len - 1] === "=") len--;
-  if (wavBase64[len - 1] === "=") len--;
-  const totalBytes = (len * 3) >> 2;
-
-  if (totalBytes <= 44) return null;
-
-  const all = new Uint8Array(totalBytes);
-  let j = 0;
-  for (let i = 0; i < len; i += 4) {
-    const a = lookup[wavBase64.charCodeAt(i)];
-    const b = lookup[wavBase64.charCodeAt(i + 1)];
-    const c = lookup[wavBase64.charCodeAt(i + 2)];
-    const d = lookup[wavBase64.charCodeAt(i + 3)];
-    all[j++] = (a << 2) | (b >> 4);
-    if (j < totalBytes) all[j++] = ((b & 0xf) << 4) | (c >> 2);
-    if (j < totalBytes) all[j++] = ((c & 0x3) << 6) | d;
-  }
-
-  // Slice off WAV header
-  const pcm = all.subarray(44);
-
-  // Re-encode to base64
-  let result = "";
-  for (let i = 0; i < pcm.length; i += 3) {
-    const a = pcm[i];
-    const b = i + 1 < pcm.length ? pcm[i + 1] : 0;
-    const c = i + 2 < pcm.length ? pcm[i + 2] : 0;
-    result += chars[a >> 2];
-    result += chars[((a & 0x3) << 4) | (b >> 4)];
-    result += i + 1 < pcm.length ? chars[((b & 0xf) << 2) | (c >> 6)] : "=";
-    result += i + 2 < pcm.length ? chars[c & 0x3f] : "=";
-  }
-
-  return result;
+  const wavBytes = base64ToUint8Array(wavBase64);
+  if (wavBytes.length <= 44) return null;
+  return uint8ArrayToBase64(wavBytes.subarray(44));
 }

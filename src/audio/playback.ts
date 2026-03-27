@@ -76,6 +76,7 @@ export class AudioPlaybackManager {
    */
   async flush(): Promise<void> {
     this.queue = [];
+    this.isPlaying = false;
     await this.stopCurrentSound();
   }
 

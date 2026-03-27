@@ -153,17 +153,6 @@ export function calculateRmsFromPcm16Bytes(bytes: Uint8Array): number {
   return Math.sqrt(sumSquares / numSamples);
 }
 
-/**
- * Convert an expo-av metering dB value to a linear RMS-like value (0–1).
- *
- * expo-av reports metering in dBFS where 0 dB = full scale and silence is
- * around –160 dB.  We clamp to a reasonable range and map linearly.
- */
-export function dbToLinear(db: number): number {
-  const clamped = Math.max(-60, Math.min(0, db));
-  return Math.pow(10, clamped / 20);
-}
-
 // ---------------------------------------------------------------------------
 // Concatenation helper
 // ---------------------------------------------------------------------------
