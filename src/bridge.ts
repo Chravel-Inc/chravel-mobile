@@ -20,6 +20,8 @@ export type BridgeMessage =
   | { type: "revenuecat:restore" }
   | { type: "revenuecat:getCustomerInfo" }
   | { type: "share"; text?: string; url?: string; title?: string }
+  | { type: "revenuecat:identify"; userId: string }
+  | { type: "ready" }; // web app signals it has loaded
   | { type: "ready" } // web app signals it has loaded
   // Voice bridge messages (native audio I/O for Gemini Live)
   | { type: "voice:request-permission" }

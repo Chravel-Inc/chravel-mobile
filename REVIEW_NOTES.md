@@ -13,9 +13,9 @@ This account has pre-populated data to showcase all features.
 
 This app uses a WebView to deliver our web platform alongside the following native capabilities that require a native app:
 
-1. **Biometric Authentication (Face ID / Touch ID)** — The app requires biometric authentication on launch and when returning from background. This protects user trip data, payment information, and private group chats.
+1. **Biometric Authentication (Face ID / Touch ID)** — The app prompts for biometric authentication on launch and when returning from background. On devices without biometric hardware, the app skips this step and proceeds to login. This protects user trip data, payment information, and private group chats.
 
-2. **Push Notifications (APNs)** — Users receive native push notifications for chat messages, trip updates, expense split requests, and calendar changes. After first login, the app presents a pre-permission screen explaining notification value before requesting OS permission.
+2. **Push Notifications (APNs)** — Users receive native push notifications for chat messages, trip updates, expense split requests, and calendar changes. After first launch, the app presents a pre-permission screen explaining notification value before requesting OS permission.
 
 3. **Haptic Feedback** — Trip interactions (reactions, confirmations, navigation) trigger native haptic feedback for a tactile experience not possible in a browser.
 
@@ -27,7 +27,7 @@ This app uses a WebView to deliver our web platform alongside the following nati
 
 ## Review Path
 
-1. **Launch** → Biometric auth prompt (Face ID or Touch ID)
+1. **Launch** → Biometric auth prompt (Face ID or Touch ID) — skipped on devices without biometric hardware
 2. **Push prompt** → "Stay in the Loop" screen explains notification value
 3. **Sign in** → Use demo credentials above
 4. **Home** → Sample trips visible, tap any trip to explore

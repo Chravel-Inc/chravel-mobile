@@ -7,6 +7,7 @@
 ## Before Store Submission
 - [ ] Set RevenueCat production API keys (iOS + Android) as EAS env vars
 - [ ] App Store review — submit with review notes (REVIEW_NOTES.md)
+- [ ] Update app icon to company logo
 
 ## Security
 - [ ] Ensure new repo (Chravel-Inc/ChravelApp) has no secrets in git history
@@ -20,7 +21,6 @@
 
 ## Features
 - [ ] Bidirectional mic support — WebView config is in place, needs physical device testing
-- [ ] Update app icon to company logo
 - [ ] Bottom padding for pages in WebView — current `env(safe-area-inset-bottom, 34px)` may need adjustment
 
 ## Apple Sign In
@@ -30,6 +30,13 @@
 ## Infrastructure
 - [ ] Set up staging environment for chravel.app (separate Vercel deploy)
 - [ ] ~120 stale Codex branches on GitHub need cleanup
+
+## Testing (Phase 2 — Android deferred)
+- [ ] Test push notification registration + delivery
+- [ ] Test RevenueCat purchase flow
+- [x] Test OAuth flows (Google + Apple) — Google working, Apple enabled (2026-03-26)
+- [ ] Test offline → online recovery
+- [ ] Test cookie/localStorage persistence across app restarts
 
 ## Completed
 - [x] Expo project scaffolded with EAS (@chravel/chravel)
@@ -57,10 +64,12 @@
 - [x] Web app OAuth redirect fix — both providers redirect to /auth instead of landing page (2026-03-26)
 - [x] Verify payments in WebView — Stripe domains whitelisted, RevenueCat bridge wired up (2026-03-26)
 - [x] Verify Google Maps in WebView — domains whitelisted, geolocation enabled, maps loading (2026-03-26)
-
-## Testing (Phase 2 — Android deferred)
-- [ ] Test push notification registration + delivery
-- [ ] Test RevenueCat purchase flow
-- [x] Test OAuth flows (Google + Apple) — Google working, Apple enabled (2026-03-26)
-- [ ] Test offline → online recovery
-- [ ] Test cookie/localStorage persistence across app restarts
+- [x] Re-enabled biometric auth lock screen with auto-prompt and background re-lock (2026-03-27)
+- [x] Wired up RevenueCat `identifyUser()` via new `revenuecat:identify` bridge message (2026-03-27)
+- [x] Implemented `push:unregister` handler with acknowledgment event (2026-03-27)
+- [x] Appended `ChravelNative/1.0` to user agent for web app native detection (2026-03-27)
+- [x] Added `onContentProcessDidTerminate` for iOS WebKit crash recovery (2026-03-27)
+- [x] Reduced loading overlay timeout from 10s to 5s (2026-03-27)
+- [x] Removed production console.log statements (2026-03-27)
+- [x] Added unit test suite — jest + ts-jest with tests for bridge, deep linking, notifications (2026-03-27)
+- [x] Updated REVIEW_NOTES.md to accurately describe biometric auth behavior (2026-03-27)
