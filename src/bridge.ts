@@ -20,7 +20,13 @@ export type BridgeMessage =
   | { type: "revenuecat:restore" }
   | { type: "revenuecat:getCustomerInfo" }
   | { type: "share"; text?: string; url?: string; title?: string }
-  | { type: "ready" }; // web app signals it has loaded
+  | { type: "ready" } // web app signals it has loaded
+  // Voice bridge messages (native audio I/O for Gemini Live)
+  | { type: "voice:request-permission" }
+  | { type: "voice:start-capture" }
+  | { type: "voice:stop-capture" }
+  | { type: "voice:play-audio"; audio: string; sampleRate?: number }
+  | { type: "voice:flush-playback" };
 
 export type HapticStyle =
   | "light"
@@ -55,6 +61,42 @@ export function buildInjectedJS(platform: string): string {
       isNative: true,
       version: "1.0.0",
     };
+
+    // ── Native Audio API for Gemini Live voice ──────────────────
+    // The web app can check window.ChravelNativeAudio.isAvailable
+    // and route audio I/O through the native bridge instead of
+    // Web Audio API (which is unreliable in iOS WKWebView).
+    window.ChravelNativeAudio = {
+      isAvailable: true,
+      requestPermission: function() {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'voice:request-permission'
+        }));
+      },
+      startCapture: function() {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'voice:start-capture'
+        }));
+      },
+      stopCapture: function() {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'voice:stop-capture'
+        }));
+      },
+      playAudio: function(base64Pcm16, sampleRate) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'voice:play-audio',
+          audio: base64Pcm16,
+          sampleRate: sampleRate || 24000
+        }));
+      },
+      flushPlayback: function() {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'voice:flush-playback'
+        }));
+      }
+    };
+
     // Add bottom safe area spacing for iOS home indicator.
     (function() {
       var style = document.createElement('style');
