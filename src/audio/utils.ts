@@ -82,7 +82,6 @@ export function base64ToUint8Array(b64: string): Uint8Array {
   const byteLength = (len * 3) >> 2;
   const bytes = new Uint8Array(byteLength);
 
-  let p = 0;
   for (let i = 0, j = 0; i < len; i += 4) {
     const a = lookup[b64.charCodeAt(i)];
     const b = lookup[b64.charCodeAt(i + 1)];

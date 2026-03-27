@@ -40,6 +40,7 @@ export class VoiceBridge {
    * into the WebView. Must be called before handling messages.
    */
   attach(sendEvent: SendEventFn): void {
+    if (this.sendEvent) return; // Already attached — avoid re-wiring callbacks.
     this.sendEvent = sendEvent;
 
     // Wire playback callbacks.
