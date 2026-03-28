@@ -6,6 +6,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { ErrorScreen } from "./src/ErrorScreen";
 import { ChravelWebView } from "./src/ChravelWebView";
 import { PushPrePrompt } from "./src/PushPrePrompt";
+import { TermsAgreement } from "./src/TermsAgreement";
 import { LockScreen } from "./src/LockScreen";
 import {
   isBiometricAvailable,
@@ -20,6 +21,7 @@ export default function App() {
   const [locked, setLocked] = useState(true);
   const [biometricType, setBiometricType] = useState<BiometricType | null>(null);
   const [biometricsChecked, setBiometricsChecked] = useState(false);
+  const [showTerms, setShowTerms] = useState(true);
   const [showPushPrompt, setShowPushPrompt] = useState(true);
   const [hasError, setHasError] = useState(false);
   const appStateRef = useRef(AppState.currentState);
@@ -68,7 +70,9 @@ export default function App() {
 
   let content;
 
-  if (showPushPrompt) {
+  if (showTerms) {
+    content = <TermsAgreement onComplete={() => setShowTerms(false)} />;
+  } else if (showPushPrompt) {
     content = <PushPrePrompt onComplete={() => setShowPushPrompt(false)} />;
   } else if (hasError) {
     content = <ErrorScreen onRetry={() => setHasError(false)} />;
