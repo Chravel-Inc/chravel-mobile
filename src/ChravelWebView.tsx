@@ -16,7 +16,7 @@ import { WEB_APP_URL, NATIVE_USER_AGENT_SUFFIX } from "./constants";
 import { buildInjectedJS, buildWebEvent, parseBridgeMessage } from "./bridge";
 import { registerForPushNotifications, getNotificationDeepLink } from "./notifications";
 import { triggerHaptic } from "./haptics";
-import { getInitialURL, onDeepLink } from "./deepLinking";
+import { getInitialURL, mapDeepLinkPathForWebView, onDeepLink } from "./deepLinking";
 import {
   configureRevenueCat,
   identifyUser,
@@ -74,28 +74,21 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   }, []);
 
   useEffect(() => {
+    const handleDeepLinkPath = (path: string) => {
+      const target = mapDeepLinkPathForWebView(path);
+      if (target.isAuthRedirect) {
+        isAuthRedirectRef.current = true;
+        setIsLoading(true);
+      }
+      navigateWebView(target.targetPath);
+    };
+
     getInitialURL().then((path) => {
-      if (path) navigateWebView(path);
+      if (path) handleDeepLinkPath(path);
     });
 
     const unsub = onDeepLink((path) => {
-      if (path.startsWith("/auth-callback")) {
-        isAuthRedirectRef.current = true;
-        setIsLoading(true);
-        const hash = path.includes("#") ? path.substring(path.indexOf("#")) : "";
-        if (hash) {
-          // Inject the token hash into the current page (/auth) so
-          // Supabase JS detects the session tokens without navigating.
-          webViewRef.current?.injectJavaScript(
-            `window.location.href = ${JSON.stringify(`${WEB_APP_URL}/auth${hash}`)}; true;`,
-          );
-        } else {
-          // No hash — reload auth page to re-check session
-          navigateWebView("/auth");
-        }
-        return;
-      }
-      navigateWebView(path);
+      handleDeepLinkPath(path);
     });
     return unsub;
   }, [navigateWebView]);

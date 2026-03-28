@@ -44,6 +44,32 @@ export function parseDeepLinkUrl(url: string): string | null {
   }
 }
 
+export interface WebViewDeepLinkTarget {
+  targetPath: string;
+  isAuthRedirect: boolean;
+}
+
+/**
+ * Map a parsed deep-link path to the WebView navigation target.
+ *
+ * OAuth callbacks arrive as /auth-callback/...#access_token=...
+ * but Supabase JS expects the hash on /auth.
+ */
+export function mapDeepLinkPathForWebView(path: string): WebViewDeepLinkTarget {
+  if (path.startsWith("/auth-callback")) {
+    const hash = path.includes("#") ? path.substring(path.indexOf("#")) : "";
+    return {
+      targetPath: hash ? `/auth${hash}` : "/auth",
+      isAuthRedirect: true,
+    };
+  }
+
+  return {
+    targetPath: path,
+    isAuthRedirect: false,
+  };
+}
+
 /**
  * Get the URL the app was cold-started with, if any.
  */
