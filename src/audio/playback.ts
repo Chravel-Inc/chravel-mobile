@@ -12,7 +12,7 @@
  */
 
 import { createAudioPlayer } from "expo-audio";
-import type { AudioPlayer, AudioEvents } from "expo-audio/build/AudioModule.types";
+import type { AudioPlayer, AudioEvents } from "expo-audio";
 import { Paths, File as FSFile } from "expo-file-system";
 
 import { OUTPUT_SAMPLE_RATE } from "./constants";
@@ -121,7 +121,7 @@ export class AudioPlaybackManager {
   }
 
   private onPlaybackStatus = (status: Parameters<AudioEvents["playbackStatusUpdate"]>[0]) => {
-    if (status.isLoaded && status.didJustFinish) {
+    if (status.isLoaded && status.didJustFinish && !status.playing) {
       this.stopCurrentPlayer();
       this.playNext().catch((err) =>
         console.error("[AudioPlayback] Error advancing queue:", err),

@@ -15,9 +15,7 @@ import {
   IOSOutputFormat,
   AudioQuality,
 } from "expo-audio";
-import type { RecordingOptions } from "expo-audio";
-import type { AudioRecorder } from "expo-audio/build/AudioModule.types";
-import { createRecordingOptions } from "expo-audio/build/utils/options";
+import type { RecordingOptions, AudioRecorder } from "expo-audio";
 import { File as FSFile } from "expo-file-system";
 import { Platform } from "react-native";
 
@@ -140,9 +138,8 @@ export class AudioCaptureManager {
     if (!this._isRecording) return;
 
     try {
-      const platformOptions = createRecordingOptions(RECORDING_OPTIONS);
-      const recorder = new AudioModule.AudioRecorder(platformOptions);
-      await recorder.prepareToRecordAsync();
+      const recorder = new AudioModule.AudioRecorder({});
+      await recorder.prepareToRecordAsync(RECORDING_OPTIONS);
       recorder.record();
       this.recording = recorder;
 
