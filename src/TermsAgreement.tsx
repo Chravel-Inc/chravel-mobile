@@ -47,6 +47,10 @@ export function TermsAgreement({ onComplete }: TermsAgreementProps) {
     onComplete();
   }, [onComplete]);
 
+  const toggleAgreed = useCallback(() => {
+    setAgreed((prev) => !prev);
+  }, []);
+
   if (!isVisible) {
     return null;
   }
@@ -59,31 +63,33 @@ export function TermsAgreement({ onComplete }: TermsAgreementProps) {
           Before creating your account, please review and agree to our terms.
         </Text>
 
-        <TouchableOpacity
-          style={styles.checkboxRow}
-          onPress={() => setAgreed((prev) => !prev)}
-          activeOpacity={0.7}
-        >
-          <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
-            {agreed && <Text style={styles.checkmark}>✓</Text>}
-          </View>
-          <Text style={styles.checkboxLabel}>
-            I agree to the Chravel{" "}
+        <View style={styles.checkboxRow}>
+          <TouchableOpacity onPress={toggleAgreed} activeOpacity={0.7}>
+            <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
+              {agreed && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+          </TouchableOpacity>
+          <View style={styles.checkboxLabelRow}>
+            <TouchableOpacity onPress={toggleAgreed} activeOpacity={0.7}>
+              <Text style={styles.checkboxLabel}>I agree to the Chravel </Text>
+            </TouchableOpacity>
             <Text
-              style={styles.link}
+              style={[styles.checkboxLabel, styles.link]}
               onPress={() => Linking.openURL(TERMS_URL)}
             >
               Terms of Use
-            </Text>{" "}
-            and{" "}
+            </Text>
+            <TouchableOpacity onPress={toggleAgreed} activeOpacity={0.7}>
+              <Text style={styles.checkboxLabel}> and </Text>
+            </TouchableOpacity>
             <Text
-              style={styles.link}
+              style={[styles.checkboxLabel, styles.link]}
               onPress={() => Linking.openURL(PRIVACY_URL)}
             >
               Privacy Policy
             </Text>
-          </Text>
-        </TouchableOpacity>
+          </View>
+        </View>
 
         <TouchableOpacity
           style={[styles.continueButton, !agreed && styles.continueButtonDisabled]}
@@ -157,7 +163,11 @@ const styles = StyleSheet.create({
     color: "#CCCCCC",
     fontSize: 15,
     lineHeight: 22,
+  },
+  checkboxLabelRow: {
     flex: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   link: {
     color: "#3A60D0",
