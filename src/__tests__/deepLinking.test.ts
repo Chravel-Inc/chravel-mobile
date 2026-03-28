@@ -3,7 +3,7 @@ jest.mock("expo-linking", () => ({
   addEventListener: jest.fn(),
 }));
 
-import { parseDeepLinkUrl } from "../deepLinking";
+import { parseDeepLinkUrl, mapDeepLinkPathForWebView } from "../deepLinking";
 
 describe("parseDeepLinkUrl", () => {
   describe("custom scheme (chravel://)", () => {
@@ -63,6 +63,34 @@ describe("parseDeepLinkUrl", () => {
       // The fallback regex in parseDeepLinkUrl handles this
       const result = parseDeepLinkUrl("chravel://");
       expect(result).not.toBeNull();
+    });
+  });
+});
+
+describe("mapDeepLinkPathForWebView", () => {
+  it("maps OAuth callback hash to /auth target", () => {
+    const result = mapDeepLinkPathForWebView(
+      "/auth-callback/123#access_token=abc&refresh_token=def"
+    );
+    expect(result).toEqual({
+      targetPath: "/auth#access_token=abc&refresh_token=def",
+      isAuthRedirect: true,
+    });
+  });
+
+  it("maps OAuth callback without hash to /auth", () => {
+    const result = mapDeepLinkPathForWebView("/auth-callback/123");
+    expect(result).toEqual({
+      targetPath: "/auth",
+      isAuthRedirect: true,
+    });
+  });
+
+  it("passes through normal deep-link path unchanged", () => {
+    const result = mapDeepLinkPathForWebView("/trip/t1?tab=chat");
+    expect(result).toEqual({
+      targetPath: "/trip/t1?tab=chat",
+      isAuthRedirect: false,
     });
   });
 });
