@@ -1,9 +1,9 @@
 /**
- * Native audio playback using expo-av.
+ * Native audio playback using expo-audio.
  *
  * Accepts base64 PCM16 chunks (typically 24 kHz mono from Vertex AI),
  * wraps them in a WAV file, and plays them sequentially through
- * expo-av's Audio.Sound.
+ * expo-audio's AudioPlayer.
  *
  * Supports:
  * - Queued gapless playback (chunks are played one after another)
@@ -11,7 +11,8 @@
  * - RMS reporting per chunk for waveform visualisation
  */
 
-import { Audio } from "expo-av";
+import { createAudioPlayer } from "expo-audio";
+import type { AudioPlayer, AudioEvents } from "expo-audio/build/AudioModule.types";
 import { Paths, File as FSFile } from "expo-file-system";
 
 import { OUTPUT_SAMPLE_RATE } from "./constants";
@@ -41,7 +42,7 @@ interface QueuedChunk {
 
 export class AudioPlaybackManager {
   private queue: QueuedChunk[] = [];
-  private currentSound: Audio.Sound | null = null;
+  private currentPlayer: AudioPlayer | null = null;
   private currentFile: FSFile | null = null;
   private isPlaying = false;
   private chunkCounter = 0;
@@ -77,7 +78,7 @@ export class AudioPlaybackManager {
   async flush(): Promise<void> {
     this.queue = [];
     this.isPlaying = false;
-    await this.stopCurrentSound();
+    this.stopCurrentPlayer();
   }
 
   /**
@@ -108,12 +109,10 @@ export class AudioPlaybackManager {
       this.currentFile = file;
 
       // Create and play the sound.
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: file.uri },
-        { shouldPlay: true },
-        this.onPlaybackStatus,
-      );
-      this.currentSound = sound;
+      const player = createAudioPlayer({ uri: file.uri });
+      player.addListener("playbackStatusUpdate", this.onPlaybackStatus);
+      this.currentPlayer = player;
+      player.play();
     } catch (err) {
       console.error("[AudioPlayback] Failed to play chunk:", err);
       this.cleanupCurrentFile();
@@ -121,26 +120,24 @@ export class AudioPlaybackManager {
     }
   }
 
-  private onPlaybackStatus = (status: { isLoaded: boolean; didJustFinish?: boolean }) => {
+  private onPlaybackStatus = (status: Parameters<AudioEvents["playbackStatusUpdate"]>[0]) => {
     if (status.isLoaded && status.didJustFinish) {
-      this.stopCurrentSound()
-        .then(() => this.playNext())
-        .catch((err) =>
-          console.error("[AudioPlayback] Error advancing queue:", err),
-        );
+      this.stopCurrentPlayer();
+      this.playNext().catch((err) =>
+        console.error("[AudioPlayback] Error advancing queue:", err),
+      );
     }
   };
 
-  private async stopCurrentSound(): Promise<void> {
-    const sound = this.currentSound;
-    this.currentSound = null;
+  private stopCurrentPlayer(): void {
+    const player = this.currentPlayer;
+    this.currentPlayer = null;
 
-    if (sound) {
+    if (player) {
       try {
-        await sound.stopAsync();
-        await sound.unloadAsync();
+        player.remove();
       } catch {
-        // Sound may already be unloaded.
+        // Player may already be removed.
       }
     }
 

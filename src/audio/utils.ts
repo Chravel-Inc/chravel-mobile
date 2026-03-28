@@ -17,7 +17,7 @@ import {
  * Build a 44-byte canonical WAV (RIFF) header for raw PCM data.
  *
  * The resulting Uint8Array can be prepended to a raw PCM buffer so that
- * expo-av's `Audio.Sound` can load it as a `.wav` file.
+ * expo-audio's `AudioPlayer` can load it as a `.wav` file.
  */
 export function createWavHeader(
   pcmByteLength: number,
