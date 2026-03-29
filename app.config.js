@@ -180,7 +180,7 @@ module.exports = ({ config }) => ({
   plugins: [
     "expo-notifications",
     [
-      "expo-av",
+      "expo-audio",
       {
         microphonePermission:
           "ChravelApp needs microphone access for voice conversations with AI Concierge",

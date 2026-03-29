@@ -1,5 +1,5 @@
 /**
- * Native microphone capture using expo-av.
+ * Native microphone capture using expo-audio.
  *
  * Strategy: sequential short recordings (~200 ms each).
  * After each interval we stop the recording, read the resulting file as
@@ -8,7 +8,14 @@
  * voice.
  */
 
-import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from "expo-av";
+import {
+  setAudioModeAsync,
+  requestRecordingPermissionsAsync,
+  AudioModule,
+  IOSOutputFormat,
+  AudioQuality,
+} from "expo-audio";
+import type { RecordingOptions, AudioRecorder } from "expo-audio";
 import { File as FSFile } from "expo-file-system";
 import { Platform } from "react-native";
 
@@ -38,23 +45,23 @@ export type OnAudioDataCallback = (chunk: AudioChunk) => void;
 // Recording options
 // ---------------------------------------------------------------------------
 
-const RECORDING_OPTIONS: Audio.RecordingOptions = {
+const RECORDING_OPTIONS: RecordingOptions = {
   isMeteringEnabled: true,
+  extension: ".wav",
+  sampleRate: INPUT_SAMPLE_RATE,
+  numberOfChannels: 1,
+  bitRate: INPUT_SAMPLE_RATE * 16,
   android: {
     extension: ".wav",
-    outputFormat: Audio.AndroidOutputFormat.DEFAULT,
-    audioEncoder: Audio.AndroidAudioEncoder.DEFAULT,
+    outputFormat: "default",
+    audioEncoder: "default",
     sampleRate: INPUT_SAMPLE_RATE,
-    numberOfChannels: 1,
-    bitRate: INPUT_SAMPLE_RATE * 16,
   },
   ios: {
     extension: ".wav",
-    outputFormat: Audio.IOSOutputFormat.LINEARPCM,
-    audioQuality: Audio.IOSAudioQuality.HIGH,
+    outputFormat: IOSOutputFormat.LINEARPCM,
+    audioQuality: AudioQuality.HIGH,
     sampleRate: INPUT_SAMPLE_RATE,
-    numberOfChannels: 1,
-    bitRate: INPUT_SAMPLE_RATE * 16,
     linearPCMBitDepth: 16,
     linearPCMIsBigEndian: false,
     linearPCMIsFloat: false,
@@ -67,7 +74,7 @@ const RECORDING_OPTIONS: Audio.RecordingOptions = {
 // ---------------------------------------------------------------------------
 
 export class AudioCaptureManager {
-  private recording: Audio.Recording | null = null;
+  private recording: AudioRecorder | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private _isRecording = false;
   private onAudioData: OnAudioDataCallback | null = null;
@@ -82,7 +89,7 @@ export class AudioCaptureManager {
     granted: boolean;
     canAskAgain: boolean;
   }> {
-    const { granted, canAskAgain } = await Audio.requestPermissionsAsync();
+    const { granted, canAskAgain } = await requestRecordingPermissionsAsync();
     return { granted, canAskAgain };
   }
 
@@ -92,7 +99,7 @@ export class AudioCaptureManager {
     if (this._isRecording) return;
     if (Platform.OS === "android") {
       throw new Error(
-        "Android capture requires PCM WAV input, which expo-av cannot produce.",
+        "Android capture requires PCM WAV input, which expo-audio cannot produce.",
       );
     }
 
@@ -100,14 +107,12 @@ export class AudioCaptureManager {
     this._isRecording = true;
 
     // Configure audio session for simultaneous recording + playback.
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: true,
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-      interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-      interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
-      shouldDuckAndroid: false,
-      playThroughEarpieceAndroid: false,
+    await setAudioModeAsync({
+      allowsRecording: true,
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
+      interruptionMode: "doNotMix",
+      shouldRouteThroughEarpiece: false,
     });
 
     await this.startChunk();
@@ -133,10 +138,10 @@ export class AudioCaptureManager {
     if (!this._isRecording) return;
 
     try {
-      const recording = new Audio.Recording();
-      await recording.prepareToRecordAsync(RECORDING_OPTIONS);
-      await recording.startAsync();
-      this.recording = recording;
+      const recorder = new AudioModule.AudioRecorder({});
+      await recorder.prepareToRecordAsync(RECORDING_OPTIONS);
+      recorder.record();
+      this.recording = recorder;
 
       // Schedule harvest after CAPTURE_INTERVAL_MS.
       this.timer = setTimeout(() => this.harvestChunk(), CAPTURE_INTERVAL_MS);
@@ -158,8 +163,8 @@ export class AudioCaptureManager {
     }
 
     try {
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
+      await recording.stop();
+      const uri = recording.uri;
 
       if (uri) {
         // Read the WAV file as base64 using the new expo-file-system API.
@@ -196,11 +201,11 @@ export class AudioCaptureManager {
     if (!recording) return;
 
     try {
-      const status = await recording.getStatusAsync();
+      const status = recording.getStatus();
       if (status.isRecording) {
-        await recording.stopAndUnloadAsync();
+        await recording.stop();
       }
-      const uri = recording.getURI();
+      const uri = recording.uri;
       if (uri) {
         try { new FSFile(uri).delete(); } catch { /* ignore */ }
       }
