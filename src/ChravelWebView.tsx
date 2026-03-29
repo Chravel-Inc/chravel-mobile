@@ -108,10 +108,11 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   // (cancelled, closed, etc.), reset the loading state.
 
   useEffect(() => {
+    let recoveryTimer: ReturnType<typeof setTimeout> | null = null;
     const subscription = AppState.addEventListener("change", (nextState) => {
       if (nextState === "active" && oauthOpenedAtRef.current) {
         const openedAt = oauthOpenedAtRef.current;
-        setTimeout(() => {
+        recoveryTimer = setTimeout(() => {
           if (oauthOpenedAtRef.current === openedAt) {
             oauthOpenedAtRef.current = null;
             isAuthRedirectRef.current = false;
@@ -120,7 +121,10 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         }, 3000);
       }
     });
-    return () => subscription.remove();
+    return () => {
+      if (recoveryTimer) clearTimeout(recoveryTimer);
+      subscription.remove();
+    };
   }, []);
 
   // ── Push notification taps ──────────────────────────────────
