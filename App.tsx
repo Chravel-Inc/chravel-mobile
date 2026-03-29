@@ -25,10 +25,17 @@ export default function App() {
   const [showPushPrompt, setShowPushPrompt] = useState(true);
   const [hasError, setHasError] = useState(false);
   const appStateRef = useRef(AppState.currentState);
+  const isAuthenticatingRef = useRef(false);
 
   const promptBiometric = useCallback(async () => {
-    const success = await authenticate();
-    if (success) setLocked(false);
+    if (isAuthenticatingRef.current) return;
+    isAuthenticatingRef.current = true;
+    try {
+      const success = await authenticate();
+      if (success) setLocked(false);
+    } finally {
+      isAuthenticatingRef.current = false;
+    }
   }, []);
 
   useEffect(() => {
@@ -39,8 +46,13 @@ export default function App() {
         setBiometricType(type);
         setBiometricsChecked(true);
         SplashScreen.hideAsync();
-        const success = await authenticate();
-        if (success) setLocked(false);
+        isAuthenticatingRef.current = true;
+        try {
+          const success = await authenticate();
+          if (success) setLocked(false);
+        } finally {
+          isAuthenticatingRef.current = false;
+        }
       } else {
         setLocked(false);
         setBiometricsChecked(true);
@@ -54,12 +66,18 @@ export default function App() {
       if (
         appStateRef.current.match(/inactive|background/) &&
         nextState === "active" &&
-        biometricType
+        biometricType &&
+        !isAuthenticatingRef.current
       ) {
         setLocked(true);
-        authenticate().then((success) => {
-          if (success) setLocked(false);
-        });
+        isAuthenticatingRef.current = true;
+        authenticate()
+          .then((success) => {
+            if (success) setLocked(false);
+          })
+          .finally(() => {
+            isAuthenticatingRef.current = false;
+          });
       }
       appStateRef.current = nextState;
     });
