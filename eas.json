@@ -34,7 +34,7 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "christian@chravelapp.com",
+        "appleId": "ops@chravelapp.com",
         "ascAppId": "6761122822",
         "appleTeamId": "2T6WY43H3X"
       },
