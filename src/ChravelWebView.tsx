@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  AppState,
   Platform,
   StyleSheet,
   View,
@@ -48,6 +49,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   const wasOnAuthRef = useRef(true); // WebView starts at /auth
   const currentUrlRef = useRef(`${WEB_APP_URL}/auth`);
   const isAuthRedirectRef = useRef(false); // true after OAuth deep link
+  const oauthOpenedAtRef = useRef<number | null>(null);
   const voiceBridgeRef = useRef(new VoiceBridge());
 
   // ── Initialize native SDKs ──────────────────────────────────
@@ -80,6 +82,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
 
     const unsub = onDeepLink((path) => {
       if (path.startsWith("/auth-callback")) {
+        oauthOpenedAtRef.current = null;
         isAuthRedirectRef.current = true;
         setIsLoading(true);
         const hash = path.includes("#") ? path.substring(path.indexOf("#")) : "";
@@ -99,6 +102,26 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
     });
     return unsub;
   }, [navigateWebView]);
+
+  // ── OAuth Safari return recovery ────────────────────────────
+  // If the user returns from Safari without completing OAuth
+  // (cancelled, closed, etc.), reset the loading state.
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active" && oauthOpenedAtRef.current) {
+        const openedAt = oauthOpenedAtRef.current;
+        setTimeout(() => {
+          if (oauthOpenedAtRef.current === openedAt) {
+            oauthOpenedAtRef.current = null;
+            isAuthRedirectRef.current = false;
+            setIsLoading(false);
+          }
+        }, 3000);
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   // ── Push notification taps ──────────────────────────────────
 
@@ -247,7 +270,8 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
       const isOAuthURL =
         url.includes("accounts.google.com") ||
         url.includes("appleid.apple.com") ||
-        (url.includes("supabase.co") && url.includes("provider=google"));
+        (url.includes("supabase.co") &&
+          (url.includes("provider=google") || url.includes("provider=apple")));
 
       if (isOAuthURL) {
         // Rewrite the Supabase redirect_to so OAuth lands on our
@@ -260,6 +284,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
             `redirect_to=${encodeURIComponent(callbackUrl)}`,
           );
         }
+        oauthOpenedAtRef.current = Date.now();
         Linking.openURL(oauthUrl);
         return false;
       }
@@ -312,10 +337,6 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
               // left /auth and landed on the authenticated page.
               isAuthRedirectRef.current = false;
               setIsLoading(false);
-            } else {
-              // Normal navigation away from /auth — show overlay to
-              // hide the marketing page flash.
-              setIsLoading(true);
             }
           }
 
