@@ -220,14 +220,37 @@ export class AudioCaptureManager {
 // ---------------------------------------------------------------------------
 
 /**
- * Strip the 44-byte WAV header from a base64-encoded WAV file.
- *
- * For our small chunks (~200 ms × 16 kHz × 2 bytes = ~6400 bytes) the
- * decode-slice-reencode approach is fast enough.
+ * Extracts the raw PCM payload from a base64-encoded WAV file.
+ * Parses the RIFF structure to find the 'data' chunk instead of
+ * blindly stripping 44 bytes, which breaks if 'FLLR' chunks are present.
  */
 function stripWavHeaderBase64(wavBase64: string): string | null {
   if (wavBase64.length < 60) return null;
   const wavBytes = base64ToUint8Array(wavBase64);
-  if (wavBytes.length <= 44) return null;
-  return uint8ArrayToBase64(wavBytes.subarray(44));
+
+  const view = new DataView(wavBytes.buffer, wavBytes.byteOffset, wavBytes.byteLength);
+
+  // Check for "RIFF" and "WAVE" signatures
+  if (view.byteLength < 12) return null;
+  if (view.getUint32(0, false) !== 0x52494646) return null; // "RIFF"
+  if (view.getUint32(8, false) !== 0x57415645) return null; // "WAVE"
+
+  let offset = 12;
+  while (offset < view.byteLength) {
+    if (offset + 8 > view.byteLength) break;
+
+    const chunkId = view.getUint32(offset, false);
+    const chunkSize = view.getUint32(offset + 4, true);
+
+    if (chunkId === 0x64617461) { // "data" chunk
+      const pcmBytes = new Uint8Array(wavBytes.buffer, wavBytes.byteOffset + offset + 8, Math.min(chunkSize, view.byteLength - (offset + 8)));
+      return uint8ArrayToBase64(pcmBytes);
+    }
+
+    offset += 8 + chunkSize;
+    // Word-align chunk if odd length
+    if (chunkSize % 2 !== 0) offset++;
+  }
+
+  return null;
 }
