@@ -15,7 +15,10 @@ import { Share } from "react-native";
 
 import { WEB_APP_URL, NATIVE_USER_AGENT_SUFFIX } from "./constants";
 import { buildInjectedJS, buildWebEvent, parseBridgeMessage } from "./bridge";
-import { registerForPushNotifications, getNotificationDeepLink } from "./notifications";
+import {
+  registerForPushNotifications,
+  getNotificationDeepLink,
+} from "./notifications";
 import { triggerHaptic } from "./haptics";
 import { getInitialURL, onDeepLink } from "./deepLinking";
 import {
@@ -29,6 +32,13 @@ import { VoiceBridge, type VoiceBridgeMessage } from "./voiceBridge";
 
 const ALLOWED_ORIGINS = [WEB_APP_URL, "about:", "data:"];
 
+const ALLOWED_ORIGINS_REGEX = new RegExp(
+  "^(?:" +
+    ALLOWED_ORIGINS.map((o) =>
+      o.replace(/[.*+?^\$\{\}()|[\]\\]/g, "\\$&"),
+    ).join("|") +
+    ")",
+);
 
 const ALLOWED_HOSTS = [
   "supabase.co",
@@ -85,7 +95,9 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         oauthOpenedAtRef.current = null;
         isAuthRedirectRef.current = true;
         setIsLoading(true);
-        const hash = path.includes("#") ? path.substring(path.indexOf("#")) : "";
+        const hash = path.includes("#")
+          ? path.substring(path.indexOf("#"))
+          : "";
         if (hash) {
           // Inject the token hash into the current page (/auth) so
           // Supabase JS detects the session tokens without navigating.
@@ -154,7 +166,10 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
       case "ready":
         // After OAuth redirect, keep overlay up until we leave /auth.
         // On normal load (no redirect), dismiss immediately.
-        if (isAuthRedirectRef.current && currentUrlRef.current.includes("/auth")) {
+        if (
+          isAuthRedirectRef.current &&
+          currentUrlRef.current.includes("/auth")
+        ) {
           // Still processing tokens on /auth — wait
         } else {
           isAuthRedirectRef.current = false;
@@ -265,7 +280,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         return true;
       }
 
-      if (ALLOWED_ORIGINS.some((origin) => url.startsWith(origin))) {
+      if (ALLOWED_ORIGINS_REGEX.test(url)) {
         return true;
       }
 
