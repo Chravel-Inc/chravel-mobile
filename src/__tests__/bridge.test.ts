@@ -42,6 +42,56 @@ describe("parseBridgeMessage", () => {
   it("returns null for null payload", () => {
     expect(parseBridgeMessage("null")).toBeNull();
   });
+
+  it("returns null for invalid haptic style", () => {
+    expect(
+      parseBridgeMessage(JSON.stringify({ type: "haptic", style: "ultra-heavy" }))
+    ).toBeNull();
+  });
+
+  it("returns null for missing revenuecat:purchase packageId", () => {
+    expect(
+      parseBridgeMessage(JSON.stringify({ type: "revenuecat:purchase" }))
+    ).toBeNull();
+  });
+
+  it("returns null for invalid revenuecat:purchase packageId type", () => {
+    expect(
+      parseBridgeMessage(JSON.stringify({ type: "revenuecat:purchase", packageId: 123 }))
+    ).toBeNull();
+  });
+
+  it("returns null for missing revenuecat:identify userId", () => {
+    expect(
+      parseBridgeMessage(JSON.stringify({ type: "revenuecat:identify" }))
+    ).toBeNull();
+  });
+
+  it("returns null for invalid share field type", () => {
+    expect(
+      parseBridgeMessage(JSON.stringify({ type: "share", url: 123 }))
+    ).toBeNull();
+  });
+
+  it("returns null for missing voice:play-audio audio data", () => {
+    expect(
+      parseBridgeMessage(JSON.stringify({ type: "voice:play-audio" }))
+    ).toBeNull();
+  });
+
+  it("returns null for invalid voice:play-audio sampleRate type", () => {
+    expect(
+      parseBridgeMessage(
+        JSON.stringify({ type: "voice:play-audio", audio: "...", sampleRate: "24000" })
+      )
+    ).toBeNull();
+  });
+
+  it("returns null for unknown message type", () => {
+    expect(
+      parseBridgeMessage(JSON.stringify({ type: "unknown:action" }))
+    ).toBeNull();
+  });
 });
 
 describe("buildWebEvent", () => {

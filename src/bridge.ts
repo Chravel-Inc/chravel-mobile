@@ -119,10 +119,67 @@ export function buildInjectedJS(platform: string): string {
 export function parseBridgeMessage(raw: string): BridgeMessage | null {
   try {
     const data = JSON.parse(raw);
-    if (data && typeof data.type === "string") {
-      return data as BridgeMessage;
+    if (!data || typeof data !== "object" || typeof data.type !== "string") {
+      return null;
     }
-    return null;
+
+    switch (data.type) {
+      case "haptic":
+        if (
+          typeof data.style === "string" &&
+          ["light", "medium", "heavy", "success", "warning", "error"].includes(
+            data.style,
+          )
+        ) {
+          return data as BridgeMessage;
+        }
+        return null;
+
+      case "push:register":
+      case "push:unregister":
+      case "revenuecat:restore":
+      case "revenuecat:getCustomerInfo":
+      case "ready":
+      case "voice:request-permission":
+      case "voice:start-capture":
+      case "voice:stop-capture":
+      case "voice:flush-playback":
+        return data as BridgeMessage;
+
+      case "revenuecat:purchase":
+        if (typeof data.packageId === "string") {
+          return data as BridgeMessage;
+        }
+        return null;
+
+      case "revenuecat:identify":
+        if (typeof data.userId === "string") {
+          return data as BridgeMessage;
+        }
+        return null;
+
+      case "share":
+        if (
+          (data.text === undefined || typeof data.text === "string") &&
+          (data.url === undefined || typeof data.url === "string") &&
+          (data.title === undefined || typeof data.title === "string")
+        ) {
+          return data as BridgeMessage;
+        }
+        return null;
+
+      case "voice:play-audio":
+        if (
+          typeof data.audio === "string" &&
+          (data.sampleRate === undefined || typeof data.sampleRate === "number")
+        ) {
+          return data as BridgeMessage;
+        }
+        return null;
+
+      default:
+        return null;
+    }
   } catch {
     return null;
   }
