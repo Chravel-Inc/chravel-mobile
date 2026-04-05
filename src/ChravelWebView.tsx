@@ -10,7 +10,6 @@ import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import { StatusBar } from "expo-status-bar";
 import * as Notifications from "expo-notifications";
 import * as Linking from "expo-linking";
-import * as WebBrowser from "expo-web-browser";
 import { Share } from "react-native";
 
 import { WEB_APP_URL, NATIVE_USER_AGENT_SUFFIX } from "./constants";
