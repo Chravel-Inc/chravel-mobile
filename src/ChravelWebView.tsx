@@ -12,6 +12,7 @@ import * as Notifications from "expo-notifications";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { Share } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { WEB_APP_URL, NATIVE_USER_AGENT_SUFFIX } from "./constants";
 import { buildInjectedJS, buildWebEvent, parseBridgeMessage } from "./bridge";
@@ -46,6 +47,7 @@ interface ChravelWebViewProps {
 export function ChravelWebView({ onError }: ChravelWebViewProps) {
   const webViewRef = useRef<WebView>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const insets = useSafeAreaInsets();
   const wasOnAuthRef = useRef(true); // WebView starts at /auth
   const currentUrlRef = useRef(`${WEB_APP_URL}/auth`);
   const isAuthRedirectRef = useRef(false); // true after OAuth deep link
@@ -318,7 +320,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         ref={webViewRef}
         source={{ uri: `${WEB_APP_URL}/auth` }}
         style={styles.webview}
-        injectedJavaScriptBeforeContentLoaded={buildInjectedJS(Platform.OS)}
+        injectedJavaScriptBeforeContentLoaded={buildInjectedJS(Platform.OS, insets.bottom)}
         onMessage={handleMessage}
         userAgent={`Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1 ${NATIVE_USER_AGENT_SUFFIX}`}
         mediaPlaybackRequiresUserAction={false}

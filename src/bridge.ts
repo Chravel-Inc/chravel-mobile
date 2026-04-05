@@ -55,7 +55,7 @@ export function buildWebEvent(name: string, detail: Record<string, unknown>): st
  * The web app can check `window.ChravelNative` to detect it's
  * inside the Expo shell (as opposed to Capacitor or plain browser).
  */
-export function buildInjectedJS(platform: string): string {
+export function buildInjectedJS(platform: string, bottomInset: number = 0): string {
   return `
     window.ChravelNative = {
       platform: "${platform}",
@@ -101,9 +101,12 @@ export function buildInjectedJS(platform: string): string {
     // Add bottom safe area spacing for iOS home indicator.
     (function() {
       var style = document.createElement('style');
+      var bottomPadding = Math.max(${bottomInset}, 0);
+      // Fallback for older devices/simulators where inset might be 0 but we want some padding
+      if (bottomPadding === 0 && "${platform}" === "ios") bottomPadding = 34;
       style.textContent = [
-        '#root { padding-bottom: env(safe-area-inset-bottom, 34px) !important; }',
-        'html { padding-bottom: env(safe-area-inset-bottom, 34px) !important; }',
+        '#root { padding-bottom: ' + bottomPadding + 'px !important; }',
+        'html { padding-bottom: ' + bottomPadding + 'px !important; }',
       ].join('\\n');
       document.head.appendChild(style);
     })();
