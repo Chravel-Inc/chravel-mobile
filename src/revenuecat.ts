@@ -8,6 +8,7 @@ import Constants from "expo-constants";
 import { ENTITLEMENTS } from "./constants";
 
 let isConfigured = false;
+let packagesCache: Map<string, PurchasesPackage> | null = null;
 
 /**
  * Initialize RevenueCat. Call once on app startup.
@@ -35,11 +36,28 @@ export async function configureRevenueCat(): Promise<void> {
 }
 
 /**
+ * Internal helper to fetch current available packages and cache them.
+ */
+async function getCachedPackages(): Promise<Map<string, PurchasesPackage>> {
+  if (packagesCache) return packagesCache;
+
+  const offerings = await Purchases.getOfferings();
+  const allPackages = offerings.current?.availablePackages ?? [];
+  const map = new Map<string, PurchasesPackage>(
+    allPackages.map((p) => [p.identifier, p])
+  );
+
+  packagesCache = map;
+  return map;
+}
+
+/**
  * Identify the RevenueCat user (call after Supabase auth resolves).
  * The web app sends the Supabase user ID via the bridge.
  */
 export async function identifyUser(userId: string): Promise<void> {
   if (!isConfigured) return;
+  packagesCache = null;
   await Purchases.logIn(userId);
 }
 
@@ -73,11 +91,8 @@ export async function purchasePackage(
   }
 
   try {
-    const offerings = await Purchases.getOfferings();
-    const allPackages = offerings.current?.availablePackages ?? [];
-    const pkg = allPackages.find(
-      (p: PurchasesPackage) => p.identifier === packageId
-    );
+    const packagesMap = await getCachedPackages();
+    const pkg = packagesMap.get(packageId);
 
     if (!pkg) {
       return { success: false, error: `Package not found: ${packageId}` };
