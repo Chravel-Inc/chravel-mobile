@@ -51,6 +51,8 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   const isAuthRedirectRef = useRef(false); // true after OAuth deep link
   const oauthOpenedAtRef = useRef<number | null>(null);
   const voiceBridgeRef = useRef(new VoiceBridge());
+  const isReadyRef = useRef(false);
+  const initialUrlRef = useRef<string | null>(null);
 
   // ── Initialize native SDKs ──────────────────────────────────
 
@@ -77,7 +79,13 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
 
   useEffect(() => {
     getInitialURL().then((path) => {
-      if (path) navigateWebView(path);
+      if (path) {
+        if (isReadyRef.current) {
+          navigateWebView(path);
+        } else {
+          initialUrlRef.current = path;
+        }
+      }
     });
 
     const unsub = onDeepLink((path) => {
@@ -137,7 +145,13 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
           unknown
         >;
         const path = getNotificationDeepLink(data);
-        if (path) navigateWebView(path);
+        if (path) {
+          if (isReadyRef.current) {
+            navigateWebView(path);
+          } else {
+            initialUrlRef.current = path;
+          }
+        }
       },
     );
 
@@ -159,6 +173,11 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         } else {
           isAuthRedirectRef.current = false;
           setIsLoading(false);
+        }
+        isReadyRef.current = true;
+        if (initialUrlRef.current) {
+          navigateWebView(initialUrlRef.current);
+          initialUrlRef.current = null;
         }
         break;
 
