@@ -23,6 +23,11 @@ export const PUSH_TYPES = [
 
 export type PushType = (typeof PUSH_TYPES)[number];
 
+export const COLORS = {
+  background: "#191817",
+  brandBlue: "#3A60D0",
+} as const;
+
 // Legal URLs — shown on the terms agreement screen before signup.
 export const TERMS_URL = "https://chravel.app/terms";
 export const PRIVACY_URL = "https://chravel.app/privacy";
