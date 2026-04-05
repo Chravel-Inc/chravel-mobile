@@ -21,7 +21,7 @@
 
 ## Features
 - [ ] Bidirectional mic support — WebView config is in place, needs physical device testing
-- [ ] Bottom padding for pages in WebView — current `env(safe-area-inset-bottom, 34px)` may need adjustment
+- [x] Bottom padding for pages in WebView — current `env(safe-area-inset-bottom, 34px)` may need adjustment
 
 ## Apple Sign In
 - [ ] Apple OAuth secret key expires every 6 months — regenerate before expiry (generated 2026-03-26)

@@ -120,7 +120,7 @@ describe("buildInjectedJS", () => {
 
   it("includes safe area CSS injection", () => {
     const result = buildInjectedJS("ios");
-    expect(result).toContain("safe-area-inset-bottom");
+    expect(result).toContain("bottomPadding + 'px !important; }'");
   });
 
   it("dispatches chravel:native-ready event", () => {
