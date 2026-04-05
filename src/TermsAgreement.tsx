@@ -19,7 +19,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { TERMS_URL, PRIVACY_URL } from "./constants";
+import { TERMS_URL, PRIVACY_URL, COLORS } from "./constants";
 
 const STORAGE_KEY = "chravel:terms-agreed";
 
@@ -110,7 +110,7 @@ export function TermsAgreement({ onComplete }: TermsAgreementProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#191817",
+    backgroundColor: COLORS.background,
   },
   content: {
     flex: 1,
@@ -151,8 +151,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   checkboxChecked: {
-    backgroundColor: "#3A60D0",
-    borderColor: "#3A60D0",
+    backgroundColor: COLORS.brandBlue,
+    borderColor: COLORS.brandBlue,
   },
   checkmark: {
     color: "#FFFFFF",
@@ -170,11 +170,11 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   link: {
-    color: "#3A60D0",
+    color: COLORS.brandBlue,
     textDecorationLine: "underline",
   },
   continueButton: {
-    backgroundColor: "#3A60D0",
+    backgroundColor: COLORS.brandBlue,
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 12,

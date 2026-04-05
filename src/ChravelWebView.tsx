@@ -13,7 +13,7 @@ import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { Share } from "react-native";
 
-import { WEB_APP_URL, NATIVE_USER_AGENT_SUFFIX } from "./constants";
+import { WEB_APP_URL, NATIVE_USER_AGENT_SUFFIX, COLORS } from "./constants";
 import { buildInjectedJS, buildWebEvent, parseBridgeMessage } from "./bridge";
 import { registerForPushNotifications, getNotificationDeepLink } from "./notifications";
 import { triggerHaptic } from "./haptics";
@@ -367,7 +367,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
 
       {isLoading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#3A60D0" />
+          <ActivityIndicator size="large" color={COLORS.brandBlue} />
         </View>
       )}
     </View>
@@ -377,15 +377,15 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#191817",
+    backgroundColor: COLORS.background,
   },
   webview: {
     flex: 1,
-    backgroundColor: "#191817",
+    backgroundColor: COLORS.background,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#191817",
+    backgroundColor: COLORS.background,
     justifyContent: "center",
     alignItems: "center",
   },

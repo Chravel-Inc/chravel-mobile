@@ -1,6 +1,7 @@
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { COLORS } from "./constants";
 
 interface ErrorScreenProps {
   onRetry: () => void;
@@ -24,7 +25,7 @@ export function ErrorScreen({ onRetry }: ErrorScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#191817",
+    backgroundColor: COLORS.background,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 32,
@@ -42,7 +43,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   button: {
-    backgroundColor: "#3A60D0",
+    backgroundColor: COLORS.brandBlue,
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 8,

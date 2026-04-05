@@ -20,6 +20,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
+import { COLORS } from "./constants";
 
 const STORAGE_KEY = "chravel:push-preprompt-shown";
 
@@ -61,7 +62,7 @@ export function PushPrePrompt({ onComplete }: PushPrePromptProps) {
         name: "Default",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: "#3A60D0",
+        lightColor: COLORS.brandBlue,
       });
     }
 
@@ -109,7 +110,7 @@ export function PushPrePrompt({ onComplete }: PushPrePromptProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#191817",
+    backgroundColor: COLORS.background,
   },
   content: {
     flex: 1,
@@ -146,7 +147,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   enableButton: {
-    backgroundColor: "#3A60D0",
+    backgroundColor: COLORS.brandBlue,
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 12,
