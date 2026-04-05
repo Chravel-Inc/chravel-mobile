@@ -9,6 +9,23 @@
 - [ ] App Store review — submit with review notes (REVIEW_NOTES.md)
 - [ ] Update app icon to company logo
 
+## Google Play Store Setup
+- [x] Google Play Developer account created (ID: 6532601914148218587)
+- [x] GCP service account created + permissions granted
+- [x] `GOOGLE_SERVICE_ACCOUNT_JSON` GitHub secret added
+- [x] Android CI/CD build job added to eas-build.yml
+- [ ] Create app listing in Play Console (name, descriptions, screenshots, feature graphic)
+- [ ] Complete content rating (IARC questionnaire)
+- [ ] Complete data safety section (mirror iOS privacy manifest)
+- [ ] Create internal testing track + add testers
+- [ ] Upload first AAB (triggers app signing setup — run `eas build --platform android --profile production`)
+- [ ] Firebase: create project, add Android app (`com.chravel.app`), download `google-services.json`, enable FCM v1
+- [ ] Upload FCM credentials to EAS: `eas credentials --platform android`
+- [ ] Supabase: add FCM server key for Android push delivery
+- [ ] RevenueCat: add Google Play Store app, upload service account JSON, create matching subscriptions
+- [ ] Set `REVENUECAT_ANDROID_API_KEY` EAS env var
+- [ ] Deploy `/.well-known/assetlinks.json` on chravel.app for Android App Links (needs SHA-256 from Play Console → App signing)
+
 ## Security
 - [ ] Ensure new repo (Chravel-Inc/ChravelApp) has no secrets in git history
 
@@ -53,6 +70,9 @@
 - [x] OAuth working in WebView (Safari user agent)
 - [x] Vercel reconnected and deploying from Chravel-Inc/ChravelApp
 - [x] TestFlight build submitted
+- [x] Android voice capture fixed — `@mykin-ai/expo-audio-stream` for PCM streaming via AudioRecord (2026-04-05)
+- [x] Android CI/CD — parallel build-android job in eas-build.yml, auto-submit to Play Store internal track (2026-04-05)
+- [x] Platform-conditional user agent — iOS keeps Safari UA for WebView compat, Android uses default Chrome UA (2026-04-05)
 - [x] APNs key created and uploaded to EAS + Supabase
 - [x] Bridge adapter deployed
 - [x] AASA file deployed for universal links

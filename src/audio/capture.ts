@@ -97,11 +97,6 @@ export class AudioCaptureManager {
 
   async start(onData: OnAudioDataCallback): Promise<void> {
     if (this._isRecording) return;
-    if (Platform.OS === "android") {
-      throw new Error(
-        "Android capture requires PCM WAV input, which expo-audio cannot produce.",
-      );
-    }
 
     this.onAudioData = onData;
     this._isRecording = true;
@@ -213,6 +208,32 @@ export class AudioCaptureManager {
       // Recording may already be stopped — ignore.
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Factory — platform-aware capture manager
+// ---------------------------------------------------------------------------
+
+/** Common interface for both iOS and Android capture managers. */
+export interface CaptureManager {
+  readonly isRecording: boolean;
+  requestPermission(): Promise<{ granted: boolean; canAskAgain: boolean }>;
+  start(onData: OnAudioDataCallback): Promise<void>;
+  stop(): Promise<void>;
+}
+
+/**
+ * Returns the appropriate capture manager for the current platform.
+ * iOS uses expo-audio (sequential short recordings → WAV → strip header).
+ * Android uses @mykin-ai/expo-audio-stream (AudioRecord PCM streaming).
+ */
+export function createCaptureManager(): CaptureManager {
+  if (Platform.OS === "android") {
+    // Lazy import to avoid loading the Android-only module on iOS.
+    const { AndroidCaptureManager } = require("./androidCapture");
+    return new AndroidCaptureManager();
+  }
+  return new AudioCaptureManager();
 }
 
 // ---------------------------------------------------------------------------

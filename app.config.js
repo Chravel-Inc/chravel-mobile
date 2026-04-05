@@ -188,6 +188,7 @@ module.exports = ({ config }) => ({
           "ChravelApp needs microphone access for voice conversations with AI Concierge",
       },
     ],
+    "@mykin-ai/expo-audio-stream",
     [
       "expo-splash-screen",
       {

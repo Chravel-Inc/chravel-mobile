@@ -1,4 +1,4 @@
-name: EAS Build & Submit to TestFlight
+name: EAS Build & Submit
 
 on:
   push:
@@ -33,7 +33,7 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
-  build:
+  build-ios:
     name: Build iOS & Submit to TestFlight
     needs: test
     runs-on: ubuntu-latest
@@ -62,5 +62,40 @@ jobs:
       - name: Build and submit to TestFlight
         run: |
           eas build --platform ios --profile production --non-interactive --auto-submit 2>&1 | tee build-output.txt
-          echo "### EAS Build" >> $GITHUB_STEP_SUMMARY
+          echo "### EAS Build (iOS)" >> $GITHUB_STEP_SUMMARY
+          grep -oP 'https://expo.dev/accounts/\S+' build-output.txt >> $GITHUB_STEP_SUMMARY || true
+
+  build-android:
+    name: Build Android & Submit to Play Store
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: ^12.0.0
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Verify EAS authentication
+        run: eas whoami
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Write Google Play service account key
+        run: echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > play-store-service-account.json
+
+      - name: Build and submit to Play Store
+        run: |
+          eas build --platform android --profile production --non-interactive --auto-submit 2>&1 | tee build-output.txt
+          echo "### EAS Build (Android)" >> $GITHUB_STEP_SUMMARY
           grep -oP 'https://expo.dev/accounts/\S+' build-output.txt >> $GITHUB_STEP_SUMMARY || true
