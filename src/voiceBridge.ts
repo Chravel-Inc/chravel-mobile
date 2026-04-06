@@ -7,7 +7,7 @@
  * WebView as `chravel:voice-*` custom events.
  */
 
-import { AudioCaptureManager, type AudioChunk } from "./audio/capture";
+import { createCaptureManager, type AudioChunk } from "./audio/capture";
 import { AudioPlaybackManager } from "./audio/playback";
 import { OUTPUT_SAMPLE_RATE } from "./audio/constants";
 
@@ -31,7 +31,7 @@ export type VoiceBridgeMessage =
 // ---------------------------------------------------------------------------
 
 export class VoiceBridge {
-  private capture = new AudioCaptureManager();
+  private capture = createCaptureManager();
   private playback = new AudioPlaybackManager();
   private sendEvent: SendEventFn | null = null;
 

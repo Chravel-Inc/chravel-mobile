@@ -50,13 +50,14 @@ This is the **native mobile shell only** — an Expo/React Native app (~1,500 li
 | `src/ErrorScreen.tsx` | Network error UI with retry |
 | `src/PushPrePrompt.tsx` | Push notification opt-in screen |
 | `src/TermsAgreement.tsx` | Terms & privacy acceptance screen |
-| `src/audio/capture.ts` | Microphone recording — 200ms chunks, PCM16, 16kHz |
+| `src/audio/capture.ts` | Microphone recording — iOS: 200ms chunks via expo-audio; Android: PCM streaming via expo-audio-stream |
+| `src/audio/androidCapture.ts` | Android-specific PCM capture using @mykin-ai/expo-audio-stream |
 | `src/audio/playback.ts` | Audio playback — gapless queue, barge-in, 24kHz |
 | `src/audio/utils.ts` | WAV header generation, base64 conversion, RMS calculation |
 | `src/audio/constants.ts` | Audio sample rates and intervals |
 | `app.config.js` | Expo config: permissions, deep links, privacy manifest, entitlements |
 | `eas.json` | EAS build profiles (dev, preview, production) + submit config |
-| `.github/workflows/eas-build.yml` | CI: build iOS + auto-submit TestFlight on push to main |
+| `.github/workflows/eas-build.yml` | CI: build iOS + Android, auto-submit to TestFlight + Play Store on push to main |
 
 ## Bridge protocol contract
 
@@ -123,7 +124,8 @@ Build & deploy is handled by EAS (see CI/CD section).
 - **TypeScript 5.9.2** (strict mode)
 - **react-native-webview 13.16.1** — hosts the web app
 - **react-native-purchases 9.14.0** — RevenueCat subscriptions
-- **expo-audio** — voice capture/playback for Gemini Live
+- **expo-audio** — voice capture (iOS) + playback (both platforms) for Gemini Live
+- **@mykin-ai/expo-audio-stream 0.3.x** — voice capture on Android (PCM streaming via AudioRecord)
 - **expo-notifications** — APNs/FCM push
 - **expo-local-authentication** — biometric auth
 - **Jest 30.3.0 + ts-jest** — testing
@@ -135,16 +137,18 @@ Build & deploy is handled by EAS (see CI/CD section).
 | `REVENUECAT_IOS_API_KEY` | `app.config.js` → `revenuecat.ts` | RevenueCat iOS key (client-safe) |
 | `REVENUECAT_ANDROID_API_KEY` | `app.config.js` → `revenuecat.ts` | RevenueCat Android key (client-safe) |
 | `EXPO_TOKEN` | GitHub Actions secret | EAS CI authentication |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | GitHub Actions secret | Google Play submit (service account key JSON) |
 
 No `.env` files are committed. RevenueCat keys are public client-side keys by design.
 
 ## CI/CD
 
-Push to `main` → GitHub Actions → EAS Build (iOS production) → auto-submit to TestFlight.
+Push to `main` → GitHub Actions → tests → EAS Build (iOS + Android) → auto-submit to TestFlight + Play Store (internal track).
 
 - Workflow: `.github/workflows/eas-build.yml`
-- **No test step in CI** — tests don't run before build
-- **No Android CI** — only iOS is automated
+- Tests + TypeScript check run before build
+- iOS build submits to TestFlight
+- Android build submits to Google Play internal testing track
 - **No preview/PR builds**
 
 ## Conventions
@@ -159,7 +163,7 @@ Push to `main` → GitHub Actions → EAS Build (iOS production) → auto-submit
 
 ## Known limitations
 
-- **Android voice capture is broken** — `expo-audio` can't produce PCM WAV on Android (`capture.ts` line 100-104 throws)
+- **Android voice capture** uses `@mykin-ai/expo-audio-stream` instead of `expo-audio` (Android's MediaRecorder has no PCM WAV output)
 - **No offline support** — blank screen without internet
 - **No crash reporting** — no Sentry/Bugsnag/Crashlytics
 - **No staging environment** — web app changes go to production
