@@ -10,9 +10,9 @@
  */
 
 import { ExpoPlayAudioStream } from "@mykin-ai/expo-audio-stream";
-import { requestRecordingPermissionsAsync } from "expo-audio";
+import { requestRecordingPermissionsAsync, setAudioModeAsync } from "expo-audio";
 
-import { INPUT_SAMPLE_RATE } from "./constants";
+import { INPUT_SAMPLE_RATE, CAPTURE_INTERVAL_MS } from "./constants";
 import { calculateRmsFromPcm16Base64, uint8ArrayToBase64 } from "./utils";
 import type { AudioChunk, OnAudioDataCallback } from "./capture";
 
@@ -48,6 +48,16 @@ export class AndroidCaptureManager {
     this.onAudioData = onData;
     this._isRecording = true;
 
+    // Configure audio session for simultaneous recording + playback (duplex voice).
+    // Mirrors the iOS AudioCaptureManager.start() configuration.
+    await setAudioModeAsync({
+      allowsRecording: true,
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
+      interruptionMode: "doNotMix",
+      shouldRouteThroughEarpiece: false,
+    });
+
     // Subscribe to audio data events before starting recording.
     this.subscription = ExpoPlayAudioStream.subscribeToAudioEvents(
       async (event) => {
@@ -81,6 +91,7 @@ export class AndroidCaptureManager {
         sampleRate: INPUT_SAMPLE_RATE,
         encoding: "pcm_16bit",
         channels: 1,
+        interval: CAPTURE_INTERVAL_MS,
       });
     } catch (err) {
       console.error("[AndroidCapture] Failed to start recording:", err);
