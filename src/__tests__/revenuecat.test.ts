@@ -1,14 +1,9 @@
-import Purchases, {
-  type CustomerInfo,
-  type PurchasesPackage,
-  LOG_LEVEL,
-} from "react-native-purchases";
-
 const mockPurchases = {
   getOfferings: jest.fn(),
   purchasePackage: jest.fn(),
   logIn: jest.fn(),
   configure: jest.fn(),
+  setLogLevel: jest.fn(),
 };
 
 jest.mock("react-native-purchases", () => ({
@@ -29,14 +24,19 @@ jest.mock("expo-constants", () => ({
   },
 }));
 
-import { configureRevenueCat, identifyUser, purchasePackage } from "../revenuecat";
-
 describe("revenuecat", () => {
+  // Re-import the module fresh for each test to reset isConfigured/packagesCache.
+  let configureRevenueCat: typeof import("../revenuecat").configureRevenueCat;
+  let identifyUser: typeof import("../revenuecat").identifyUser;
+  let purchasePackage: typeof import("../revenuecat").purchasePackage;
+
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset the internal state of the module by re-importing or manually resetting
-    // Since we can't easily reset module-level variables without more complex setup,
-    // we'll just ensure we understand the state.
+    jest.resetModules();
+    const mod = require("../revenuecat");
+    configureRevenueCat = mod.configureRevenueCat;
+    identifyUser = mod.identifyUser;
+    purchasePackage = mod.purchasePackage;
   });
 
   it("should purchase a package successfully", async () => {
@@ -66,10 +66,7 @@ describe("revenuecat", () => {
       },
     });
 
-    // Invalidate cache first by identifying user
-    await identifyUser("reset");
-    mockPurchases.getOfferings.mockClear();
-
+    await configureRevenueCat();
     await purchasePackage("pkg_1");
     await purchasePackage("pkg_1");
 
@@ -84,7 +81,7 @@ describe("revenuecat", () => {
       },
     });
 
-    await identifyUser("user-1");
+    await configureRevenueCat();
     await purchasePackage("pkg_1");
     expect(mockPurchases.getOfferings).toHaveBeenCalledTimes(1);
 
@@ -101,7 +98,7 @@ describe("revenuecat", () => {
       },
     });
 
-    await identifyUser("reset-not-found");
+    await configureRevenueCat();
     const result = await purchasePackage("non-existent");
 
     expect(result.success).toBe(false);

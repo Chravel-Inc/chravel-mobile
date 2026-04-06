@@ -7,4 +7,7 @@ module.exports = {
   transform: {
     "^.+\\.tsx?$": ["ts-jest", { tsconfig: "tsconfig.json", diagnostics: false }],
   },
+  globals: {
+    __DEV__: true,
+  },
 };
