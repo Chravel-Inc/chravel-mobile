@@ -55,15 +55,17 @@
 - [ ] Test offline → online recovery
 - [ ] Test cookie/localStorage persistence across app restarts
 
+## Deferred to v1.1
+- [ ] Biometric auth (Face ID / Touch ID) lock screen — implemented then removed to simplify v1.0 launch. Re-add with overlay pattern (not unmounting WebView) + iOS inactive state handling.
+
 ## Completed
 - [x] Expo project scaffolded with EAS (@chravel/chravel)
 - [x] App Store Connect listing created
 - [x] Apple Team ID, ASC App ID filled in eas.json
 - [x] Admin access on Chravel-Inc/ChravelApp repo
-- [x] Biometric auth (Face ID / Touch ID) lock screen
 - [x] Push notification pre-prompt screen
 - [x] App Store review notes (REVIEW_NOTES.md)
-- [x] Refactored App.tsx — extracted LockScreen, ErrorScreen, ChravelWebView
+- [x] Refactored App.tsx — extracted ErrorScreen, ChravelWebView
 - [x] app.config.js with real EAS project ID
 - [x] EAS development build on physical iOS device
 - [x] Edge-to-edge WebView with safe area CSS injection
@@ -84,7 +86,6 @@
 - [x] Web app OAuth redirect fix — both providers redirect to /auth instead of landing page (2026-03-26)
 - [x] Verify payments in WebView — Stripe domains whitelisted, RevenueCat bridge wired up (2026-03-26)
 - [x] Verify Google Maps in WebView — domains whitelisted, geolocation enabled, maps loading (2026-03-26)
-- [x] Re-enabled biometric auth lock screen with auto-prompt and background re-lock (2026-03-27)
 - [x] Wired up RevenueCat `identifyUser()` via new `revenuecat:identify` bridge message (2026-03-27)
 - [x] Implemented `push:unregister` handler with acknowledgment event (2026-03-27)
 - [x] Appended `ChravelNative/1.0` to user agent for web app native detection (2026-03-27)

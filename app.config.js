@@ -32,8 +32,6 @@ module.exports = ({ config }) => ({
         "Chravel uses your microphone for AI Concierge voice conversations when you tap the mic.",
       NSSpeechRecognitionUsageDescription:
         "Chravel uses speech recognition to transcribe your voice input for AI Concierge and chat dictation.",
-      NSFaceIDUsageDescription:
-        "Chravel uses Face ID to secure access to your travel plans and account.",
       ITSAppUsesNonExemptEncryption: false,
     },
     associatedDomains: ["applinks:chravel.app", "webcredentials:chravel.app"],
