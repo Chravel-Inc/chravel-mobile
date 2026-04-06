@@ -64,6 +64,9 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   const voiceBridgeRef = useRef(new VoiceBridge());
   const isReadyRef = useRef(false);
   const initialUrlRef = useRef<string | null>(null);
+  const loadFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   // ── Initialize native SDKs ──────────────────────────────────
 
@@ -76,6 +79,15 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   useEffect(() => {
     return () => {
       voiceBridgeRef.current.dispose();
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (loadFallbackTimerRef.current) {
+        clearTimeout(loadFallbackTimerRef.current);
+        loadFallbackTimerRef.current = null;
+      }
     };
   }, []);
 
@@ -386,7 +398,22 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
           // Don't hide the overlay here — wait for the "ready" bridge
           // message from the web app (sent after auth hydration).
           // Fallback: hide after 5 seconds if the signal never arrives.
-          setTimeout(() => setIsLoading(false), 5000);
+          // Must not dismiss while OAuth tokens are still being applied on /auth
+          // (see ready handler + isAuthRedirectRef), or the 5s timer from an
+          // intermediate load would clear the overlay early.
+          if (loadFallbackTimerRef.current) {
+            clearTimeout(loadFallbackTimerRef.current);
+          }
+          loadFallbackTimerRef.current = setTimeout(() => {
+            loadFallbackTimerRef.current = null;
+            if (
+              isAuthRedirectRef.current &&
+              currentUrlRef.current.includes("/auth")
+            ) {
+              return;
+            }
+            setIsLoading(false);
+          }, 5000);
         }}
         onError={() => onError()}
         onHttpError={(syntheticEvent) => {
