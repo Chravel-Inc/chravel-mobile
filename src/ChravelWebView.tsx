@@ -64,6 +64,16 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   const voiceBridgeRef = useRef(new VoiceBridge());
   const isReadyRef = useRef(false);
   const initialUrlRef = useRef<string | null>(null);
+  const loadEndFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  const clearLoadEndFallbackTimer = useCallback(() => {
+    if (loadEndFallbackTimerRef.current) {
+      clearTimeout(loadEndFallbackTimerRef.current);
+      loadEndFallbackTimerRef.current = null;
+    }
+  }, []);
 
   // ── Initialize native SDKs ──────────────────────────────────
 
@@ -76,8 +86,9 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   useEffect(() => {
     return () => {
       voiceBridgeRef.current.dispose();
+      clearLoadEndFallbackTimer();
     };
-  }, []);
+  }, [clearLoadEndFallbackTimer]);
 
   // ── Deep linking ────────────────────────────────────────────
 
@@ -103,6 +114,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
       if (path.startsWith("/auth-callback")) {
         oauthOpenedAtRef.current = null;
         isAuthRedirectRef.current = true;
+        clearLoadEndFallbackTimer();
         setIsLoading(true);
         const hash = path.includes("#")
           ? path.substring(path.indexOf("#"))
@@ -137,6 +149,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
           if (oauthOpenedAtRef.current === openedAt) {
             oauthOpenedAtRef.current = null;
             isAuthRedirectRef.current = false;
+            clearLoadEndFallbackTimer();
             setIsLoading(false);
           }
         }, 3000);
@@ -146,7 +159,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
       if (recoveryTimer) clearTimeout(recoveryTimer);
       subscription.remove();
     };
-  }, []);
+  }, [clearLoadEndFallbackTimer]);
 
   // ── Push notification taps ──────────────────────────────────
 
@@ -188,6 +201,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
           // Still processing tokens on /auth — wait
         } else {
           isAuthRedirectRef.current = false;
+          clearLoadEndFallbackTimer();
           setIsLoading(false);
         }
         isReadyRef.current = true;
@@ -288,7 +302,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         break;
       }
     }
-  }, []);
+  }, [clearLoadEndFallbackTimer, navigateWebView]);
 
   // ── URL filter ──────────────────────────────────────────────
 
@@ -376,6 +390,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
               // OAuth just completed — dismiss overlay now that we've
               // left /auth and landed on the authenticated page.
               isAuthRedirectRef.current = false;
+              clearLoadEndFallbackTimer();
               setIsLoading(false);
             }
           }
@@ -386,7 +401,19 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
           // Don't hide the overlay here — wait for the "ready" bridge
           // message from the web app (sent after auth hydration).
           // Fallback: hide after 5 seconds if the signal never arrives.
-          setTimeout(() => setIsLoading(false), 5000);
+          // Must not fire while OAuth is still resolving on /auth (can take
+          // >5s), and only one timer may be active (onLoadEnd can run often).
+          clearLoadEndFallbackTimer();
+          loadEndFallbackTimerRef.current = setTimeout(() => {
+            loadEndFallbackTimerRef.current = null;
+            if (
+              isAuthRedirectRef.current &&
+              currentUrlRef.current.includes("/auth")
+            ) {
+              return;
+            }
+            setIsLoading(false);
+          }, 5000);
         }}
         onError={() => onError()}
         onHttpError={(syntheticEvent) => {
