@@ -29,6 +29,7 @@ import {
   getCustomerInfo,
 } from "./revenuecat";
 import { VoiceBridge, type VoiceBridgeMessage } from "./voiceBridge";
+import { matchesTrustedHostSuffix } from "./hostAllowlist";
 
 const ALLOWED_ORIGINS = [WEB_APP_URL, "about:", "data:"];
 
@@ -330,7 +331,9 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
 
       try {
         const host = new URL(url).hostname;
-        if (ALLOWED_HOSTS.some((h) => host.endsWith(h))) {
+        if (
+          ALLOWED_HOSTS.some((suffix) => matchesTrustedHostSuffix(host, suffix))
+        ) {
           return true;
         }
       } catch {
