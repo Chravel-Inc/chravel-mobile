@@ -88,18 +88,9 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
     );
   }, []);
 
-  useEffect(() => {
-    getInitialURL().then((path) => {
-      if (path) {
-        if (isReadyRef.current) {
-          navigateWebView(path);
-        } else {
-          initialUrlRef.current = path;
-        }
-      }
-    });
-
-    const unsub = onDeepLink((path) => {
+  /** Same routing for live deep links, cold-start URL, and deferred notification / initial URL. */
+  const openParsedDeepLink = useCallback(
+    (path: string) => {
       if (path.startsWith("/auth-callback")) {
         oauthOpenedAtRef.current = null;
         isAuthRedirectRef.current = true;
@@ -120,9 +111,26 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         return;
       }
       navigateWebView(path);
+    },
+    [navigateWebView],
+  );
+
+  useEffect(() => {
+    getInitialURL().then((path) => {
+      if (path) {
+        if (isReadyRef.current) {
+          openParsedDeepLink(path);
+        } else {
+          initialUrlRef.current = path;
+        }
+      }
+    });
+
+    const unsub = onDeepLink((path) => {
+      openParsedDeepLink(path);
     });
     return unsub;
-  }, [navigateWebView]);
+  }, [openParsedDeepLink]);
 
   // ── OAuth Safari return recovery ────────────────────────────
   // If the user returns from Safari without completing OAuth
@@ -160,7 +168,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         const path = getNotificationDeepLink(data);
         if (path) {
           if (isReadyRef.current) {
-            navigateWebView(path);
+            openParsedDeepLink(path);
           } else {
             initialUrlRef.current = path;
           }
@@ -169,7 +177,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
     );
 
     return () => subscription.remove();
-  }, [navigateWebView]);
+  }, [openParsedDeepLink]);
 
   // ── Bridge message handler ──────────────────────────────────
 
@@ -192,7 +200,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         }
         isReadyRef.current = true;
         if (initialUrlRef.current) {
-          navigateWebView(initialUrlRef.current);
+          openParsedDeepLink(initialUrlRef.current);
           initialUrlRef.current = null;
         }
         break;
@@ -288,7 +296,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         break;
       }
     }
-  }, []);
+  }, [openParsedDeepLink]);
 
   // ── URL filter ──────────────────────────────────────────────
 
