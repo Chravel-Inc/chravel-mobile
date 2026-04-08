@@ -132,8 +132,14 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
     let recoveryTimer: ReturnType<typeof setTimeout> | null = null;
     const subscription = AppState.addEventListener("change", (nextState) => {
       if (nextState === "active" && oauthOpenedAtRef.current) {
+        // Each time we return to active while OAuth is in flight, schedule one
+        // recovery timer. Clear any previous timer so rapid active/inactive
+        // cycles (Control Center, biometric prompt, etc.) do not stack
+        // multiple callbacks that fire out of order and dismiss the overlay early.
+        if (recoveryTimer) clearTimeout(recoveryTimer);
         const openedAt = oauthOpenedAtRef.current;
         recoveryTimer = setTimeout(() => {
+          recoveryTimer = null;
           if (oauthOpenedAtRef.current === openedAt) {
             oauthOpenedAtRef.current = null;
             isAuthRedirectRef.current = false;
