@@ -88,18 +88,9 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
     );
   }, []);
 
-  useEffect(() => {
-    getInitialURL().then((path) => {
-      if (path) {
-        if (isReadyRef.current) {
-          navigateWebView(path);
-        } else {
-          initialUrlRef.current = path;
-        }
-      }
-    });
-
-    const unsub = onDeepLink((path) => {
+  /** Apply a deep-link path (OAuth callback vs in-app route). Used for live links and deferred cold-start / notification paths. */
+  const handleIncomingPath = useCallback(
+    (path: string) => {
       if (path.startsWith("/auth-callback")) {
         oauthOpenedAtRef.current = null;
         isAuthRedirectRef.current = true;
@@ -120,9 +111,29 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         return;
       }
       navigateWebView(path);
+    },
+    [navigateWebView],
+  );
+
+  useEffect(() => {
+    getInitialURL().then((path) => {
+      if (!path) return;
+      if (isReadyRef.current) {
+        handleIncomingPath(path);
+      } else {
+        initialUrlRef.current = path;
+      }
+    });
+
+    const unsub = onDeepLink((path) => {
+      if (isReadyRef.current) {
+        handleIncomingPath(path);
+      } else {
+        initialUrlRef.current = path;
+      }
     });
     return unsub;
-  }, [navigateWebView]);
+  }, [handleIncomingPath]);
 
   // ── OAuth Safari return recovery ────────────────────────────
   // If the user returns from Safari without completing OAuth
@@ -138,6 +149,12 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
             oauthOpenedAtRef.current = null;
             isAuthRedirectRef.current = false;
             setIsLoading(false);
+            // OAuth cancelled — apply any non-callback deep link deferred during /auth.
+            const pending = initialUrlRef.current;
+            if (pending && !pending.startsWith("/auth-callback")) {
+              initialUrlRef.current = null;
+              handleIncomingPath(pending);
+            }
           }
         }, 3000);
       }
@@ -146,7 +163,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
       if (recoveryTimer) clearTimeout(recoveryTimer);
       subscription.remove();
     };
-  }, []);
+  }, [handleIncomingPath]);
 
   // ── Push notification taps ──────────────────────────────────
 
@@ -160,7 +177,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         const path = getNotificationDeepLink(data);
         if (path) {
           if (isReadyRef.current) {
-            navigateWebView(path);
+            handleIncomingPath(path);
           } else {
             initialUrlRef.current = path;
           }
@@ -169,7 +186,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
     );
 
     return () => subscription.remove();
-  }, [navigateWebView]);
+  }, [handleIncomingPath]);
 
   // ── Bridge message handler ──────────────────────────────────
 
@@ -192,8 +209,17 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         }
         isReadyRef.current = true;
         if (initialUrlRef.current) {
-          navigateWebView(initialUrlRef.current);
-          initialUrlRef.current = null;
+          const pending = initialUrlRef.current;
+          const deferForOAuth =
+            isAuthRedirectRef.current &&
+            currentUrlRef.current.includes("/auth") &&
+            !pending.startsWith("/auth-callback");
+          if (deferForOAuth) {
+            // Keep pending trip / push route until OAuth leaves /auth (see onNavigationStateChange).
+          } else {
+            initialUrlRef.current = null;
+            handleIncomingPath(pending);
+          }
         }
         break;
 
@@ -288,7 +314,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         break;
       }
     }
-  }, []);
+  }, [handleIncomingPath]);
 
   // ── URL filter ──────────────────────────────────────────────
 
@@ -377,6 +403,12 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
               // left /auth and landed on the authenticated page.
               isAuthRedirectRef.current = false;
               setIsLoading(false);
+            }
+            // Apply any deep link deferred while OAuth was finishing on /auth.
+            if (initialUrlRef.current) {
+              const pending = initialUrlRef.current;
+              initialUrlRef.current = null;
+              handleIncomingPath(pending);
             }
           }
 
