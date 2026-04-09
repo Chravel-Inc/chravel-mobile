@@ -1,4 +1,13 @@
+import { Platform } from "react-native";
+
 export const WEB_APP_URL = "https://chravel.app";
+
+export const IS_TABLET = Platform.OS === "ios" && Platform.isPad === true;
+
+/** Scale a dimension up for tablet screens (1.3x on iPad, 1x elsewhere). */
+export function tabletScale(value: number): number {
+  return IS_TABLET ? Math.round(value * 1.3) : value;
+}
 
 // Custom user agent appended to WebView requests so the web app
 // can detect it's running inside the native shell.

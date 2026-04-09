@@ -132,6 +132,31 @@ describe("buildInjectedJS", () => {
     const result = buildInjectedJS("android");
     expect(result).toContain('platform: "android"');
   });
+
+  it("includes isTablet: true when third arg is true", () => {
+    const result = buildInjectedJS("ios", 0, true);
+    expect(result).toContain("isTablet: true");
+  });
+
+  it("includes isTablet: false when third arg is false", () => {
+    const result = buildInjectedJS("ios", 0, false);
+    expect(result).toContain("isTablet: false");
+  });
+
+  it("defaults isTablet to false when omitted", () => {
+    const result = buildInjectedJS("ios");
+    expect(result).toContain("isTablet: false");
+  });
+
+  it("uses 20px safe area fallback for iPad on iOS", () => {
+    const result = buildInjectedJS("ios", 0, true);
+    expect(result).toContain("true ? 20 : 34");
+  });
+
+  it("uses 34px safe area fallback for iPhone on iOS", () => {
+    const result = buildInjectedJS("ios", 0, false);
+    expect(result).toContain("false ? 20 : 34");
+  });
 });
 
 expect.extend({

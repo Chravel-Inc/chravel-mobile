@@ -4,7 +4,7 @@ module.exports = ({ config }) => ({
   slug: "chravel-mobile",
   owner: "meechyourgoals",
   version: "1.0.0",
-  orientation: "portrait",
+  orientation: "default",
   icon: "./assets/icon.png",
   userInterfaceStyle: "automatic",
   scheme: "chravel",

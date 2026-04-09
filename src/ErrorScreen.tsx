@@ -1,7 +1,7 @@
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { COLORS } from "./constants";
+import { COLORS, IS_TABLET, tabletScale } from "./constants";
 
 interface ErrorScreenProps {
   onRetry: () => void;
@@ -28,29 +28,32 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: tabletScale(32),
+    maxWidth: IS_TABLET ? 540 : undefined,
+    alignSelf: "center",
+    width: "100%",
   },
   title: {
     color: "#FFFFFF",
-    fontSize: 20,
+    fontSize: tabletScale(20),
     fontWeight: "600",
     marginBottom: 8,
   },
   body: {
     color: "#999999",
-    fontSize: 16,
+    fontSize: tabletScale(16),
     textAlign: "center",
     marginBottom: 24,
   },
   button: {
     backgroundColor: COLORS.brandBlue,
-    paddingHorizontal: 32,
+    paddingHorizontal: tabletScale(32),
     paddingVertical: 12,
     borderRadius: 8,
   },
   buttonText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: tabletScale(16),
     fontWeight: "600",
   },
 });

@@ -20,7 +20,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
-import { COLORS } from "./constants";
+import { COLORS, IS_TABLET, tabletScale } from "./constants";
 
 const STORAGE_KEY = "chravel:push-preprompt-shown";
 
@@ -116,23 +116,26 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: tabletScale(32),
+    maxWidth: IS_TABLET ? 540 : undefined,
+    alignSelf: "center",
+    width: "100%",
   },
   icon: {
-    fontSize: 56,
+    fontSize: tabletScale(56),
     marginBottom: 24,
   },
   title: {
     color: "#FFFFFF",
-    fontSize: 26,
+    fontSize: tabletScale(26),
     fontWeight: "700",
     marginBottom: 12,
     textAlign: "center",
   },
   body: {
     color: "#999999",
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: tabletScale(16),
+    lineHeight: tabletScale(24),
     textAlign: "center",
     marginBottom: 32,
   },
@@ -143,21 +146,21 @@ const styles = StyleSheet.create({
   },
   feature: {
     color: "#CCCCCC",
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: tabletScale(15),
+    lineHeight: tabletScale(22),
   },
   enableButton: {
     backgroundColor: COLORS.brandBlue,
-    paddingHorizontal: 32,
+    paddingHorizontal: tabletScale(32),
     paddingVertical: 14,
     borderRadius: 12,
-    minWidth: 250,
+    minWidth: tabletScale(250),
     alignItems: "center",
     marginBottom: 16,
   },
   enableText: {
     color: "#FFFFFF",
-    fontSize: 17,
+    fontSize: tabletScale(17),
     fontWeight: "600",
   },
   skipButton: {
@@ -165,6 +168,6 @@ const styles = StyleSheet.create({
   },
   skipText: {
     color: "#666666",
-    fontSize: 15,
+    fontSize: tabletScale(15),
   },
 });
