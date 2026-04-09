@@ -19,7 +19,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { TERMS_URL, PRIVACY_URL, COLORS } from "./constants";
+import { TERMS_URL, PRIVACY_URL, COLORS, IS_TABLET, tabletScale } from "./constants";
 
 const STORAGE_KEY = "chravel:terms-agreed";
 
@@ -116,19 +116,22 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: tabletScale(32),
+    maxWidth: IS_TABLET ? 540 : undefined,
+    alignSelf: "center",
+    width: "100%",
   },
   title: {
     color: "#FFFFFF",
-    fontSize: 26,
+    fontSize: tabletScale(26),
     fontWeight: "700",
     marginBottom: 12,
     textAlign: "center",
   },
   body: {
     color: "#999999",
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: tabletScale(16),
+    lineHeight: tabletScale(24),
     textAlign: "center",
     marginBottom: 40,
   },
@@ -140,8 +143,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   checkbox: {
-    width: 24,
-    height: 24,
+    width: tabletScale(24),
+    height: tabletScale(24),
     borderRadius: 6,
     borderWidth: 2,
     borderColor: "#555555",
@@ -156,13 +159,13 @@ const styles = StyleSheet.create({
   },
   checkmark: {
     color: "#FFFFFF",
-    fontSize: 14,
+    fontSize: tabletScale(14),
     fontWeight: "700",
   },
   checkboxLabel: {
     color: "#CCCCCC",
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: tabletScale(15),
+    lineHeight: tabletScale(22),
   },
   checkboxLabelRow: {
     flex: 1,
@@ -175,10 +178,10 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     backgroundColor: COLORS.brandBlue,
-    paddingHorizontal: 32,
+    paddingHorizontal: tabletScale(32),
     paddingVertical: 14,
     borderRadius: 12,
-    minWidth: 250,
+    minWidth: tabletScale(250),
     alignItems: "center",
   },
   continueButtonDisabled: {
@@ -186,7 +189,7 @@ const styles = StyleSheet.create({
   },
   continueText: {
     color: "#FFFFFF",
-    fontSize: 17,
+    fontSize: tabletScale(17),
     fontWeight: "600",
   },
   continueTextDisabled: {

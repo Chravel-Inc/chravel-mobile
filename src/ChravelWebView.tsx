@@ -353,9 +353,13 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         ref={webViewRef}
         source={{ uri: `${WEB_APP_URL}/auth` }}
         style={styles.webview}
-        injectedJavaScriptBeforeContentLoaded={buildInjectedJS(Platform.OS, insets.bottom)}
+        injectedJavaScriptBeforeContentLoaded={buildInjectedJS(Platform.OS, insets.bottom, Platform.isPad === true)}
         onMessage={handleMessage}
-        userAgent={Platform.OS === "ios" ? `Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1 ${NATIVE_USER_AGENT_SUFFIX}` : undefined}
+        userAgent={Platform.OS === "ios"
+          ? Platform.isPad
+            ? `Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/604.1 ${NATIVE_USER_AGENT_SUFFIX}`
+            : `Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1 ${NATIVE_USER_AGENT_SUFFIX}`
+          : undefined}
         applicationNameForUserAgent={Platform.OS === "android" ? NATIVE_USER_AGENT_SUFFIX : undefined}
         mediaPlaybackRequiresUserAction={false}
         allowsInlineMediaPlayback={true}
