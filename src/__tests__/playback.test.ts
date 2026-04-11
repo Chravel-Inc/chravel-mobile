@@ -33,6 +33,7 @@ jest.mock("expo-file-system", () => {
 describe("AudioPlaybackManager", () => {
   beforeEach(() => {
     listenersByPlayer.clear();
+    mockCreateAudioPlayer.mockClear();
     mockCreateAudioPlayer.mockImplementation(() => {
       const player = {
         play: jest.fn(),
@@ -79,5 +80,40 @@ describe("AudioPlaybackManager", () => {
 
     await Promise.resolve();
     expect(onDrained).not.toHaveBeenCalled();
+  });
+
+  it("does not treat pre-flush finish as end of post-flush chunk", async () => {
+    const mgr = new AudioPlaybackManager();
+    const onDrained = jest.fn();
+    mgr.onQueueDrained = onDrained;
+
+    const pcm = Buffer.alloc(4).toString("base64");
+    await mgr.enqueue(pcm);
+
+    const [player1] = [...listenersByPlayer.keys()];
+    const listener1 = listenersByPlayer.get(player1)!;
+
+    await mgr.flush();
+    await mgr.enqueue(pcm);
+
+    expect(mockCreateAudioPlayer).toHaveBeenCalledTimes(2);
+    const players = [...listenersByPlayer.keys()];
+    const listener2 = listenersByPlayer.get(players[1])!;
+
+    listener1({
+      isLoaded: true,
+      didJustFinish: true,
+      playing: false,
+    });
+    await Promise.resolve();
+    expect(onDrained).not.toHaveBeenCalled();
+
+    listener2({
+      isLoaded: true,
+      didJustFinish: true,
+      playing: false,
+    });
+    await Promise.resolve();
+    expect(onDrained).toHaveBeenCalledTimes(1);
   });
 });

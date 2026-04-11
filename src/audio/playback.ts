@@ -46,10 +46,8 @@ export class AudioPlaybackManager {
   private currentFile: FSFile | null = null;
   private isPlaying = false;
   private chunkCounter = 0;
-  /** Incremented on flush/dispose so late playbackStatusUpdate callbacks cannot advance a cleared queue. */
-  private flushGeneration = 0;
-  /** Generation of the chunk currently playing (matched against flushGeneration in status callbacks). */
-  private activePlayGeneration = -1;
+  /** Incremented only in flush/dispose; each player captures epoch at start so late callbacks from removed players are ignored. */
+  private playbackEpoch = 0;
 
   onRms: OnPlaybackRmsCallback | null = null;
   onQueueDrained: OnQueueDrainedCallback | null = null;
@@ -80,7 +78,7 @@ export class AudioPlaybackManager {
    * Stop all playback immediately and clear the queue (barge-in).
    */
   async flush(): Promise<void> {
-    this.flushGeneration++;
+    this.playbackEpoch++;
     this.queue = [];
     this.isPlaying = false;
     this.stopCurrentPlayer();
@@ -96,17 +94,17 @@ export class AudioPlaybackManager {
   // ── Internal ────────────────────────────────────────────────
 
   private async playNext(): Promise<void> {
-    const gen = this.flushGeneration;
+    const epochAtDequeue = this.playbackEpoch;
     const chunk = this.queue.shift();
 
     if (!chunk) {
-      if (gen !== this.flushGeneration) return;
+      if (epochAtDequeue !== this.playbackEpoch) return;
       this.isPlaying = false;
       this.onQueueDrained?.();
       return;
     }
 
-    if (gen !== this.flushGeneration) return;
+    if (epochAtDequeue !== this.playbackEpoch) return;
 
     this.isPlaying = true;
     this.onRms?.(chunk.rms);
@@ -117,16 +115,28 @@ export class AudioPlaybackManager {
       file.write(chunk.wavBase64, { encoding: "base64" });
       this.currentFile = file;
 
-      if (gen !== this.flushGeneration) {
+      if (epochAtDequeue !== this.playbackEpoch) {
         this.cleanupCurrentFile();
         return;
       }
 
+      const epochAtStart = this.playbackEpoch;
+
       // Create and play the sound.
       const player = createAudioPlayer({ uri: file.uri });
-      player.addListener("playbackStatusUpdate", this.onPlaybackStatus);
+      player.addListener(
+        "playbackStatusUpdate",
+        (status: Parameters<AudioEvents["playbackStatusUpdate"]>[0]) => {
+          if (epochAtStart !== this.playbackEpoch) return;
+          if (status.isLoaded && status.didJustFinish && !status.playing) {
+            this.stopCurrentPlayer();
+            this.playNext().catch((err) =>
+              console.error("[AudioPlayback] Error advancing queue:", err),
+            );
+          }
+        },
+      );
       this.currentPlayer = player;
-      this.activePlayGeneration = this.flushGeneration;
       player.play();
     } catch (err) {
       console.error("[AudioPlayback] Failed to play chunk:", err);
@@ -134,16 +144,6 @@ export class AudioPlaybackManager {
       await this.playNext();
     }
   }
-
-  private onPlaybackStatus = (status: Parameters<AudioEvents["playbackStatusUpdate"]>[0]) => {
-    if (this.activePlayGeneration !== this.flushGeneration) return;
-    if (status.isLoaded && status.didJustFinish && !status.playing) {
-      this.stopCurrentPlayer();
-      this.playNext().catch((err) =>
-        console.error("[AudioPlayback] Error advancing queue:", err),
-      );
-    }
-  };
 
   private stopCurrentPlayer(): void {
     const player = this.currentPlayer;
