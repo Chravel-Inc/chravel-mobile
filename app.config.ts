@@ -1,4 +1,23 @@
-module.exports = ({ config }) => ({
+import { ExpoConfig, ConfigContext } from 'expo/config';
+import fs from 'fs';
+
+const IS_PROD = process.env.EAS_BUILD_PROFILE === 'production';
+
+// Fail the build if required variables are missing in production.
+if (IS_PROD) {
+  if (!process.env.REVENUECAT_IOS_API_KEY) {
+    throw new Error("Build Failed: Missing REVENUECAT_IOS_API_KEY environment variable.");
+  }
+  if (!process.env.REVENUECAT_ANDROID_API_KEY) {
+    throw new Error("Build Failed: Missing REVENUECAT_ANDROID_API_KEY environment variable.");
+  }
+  // Android push configuration missing check
+  if (!fs.existsSync('./google-services.json') && !process.env.GOOGLE_SERVICES_JSON) {
+     throw new Error("Build Failed: google-services.json is missing. Android push notifications will fail.");
+  }
+}
+
+export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "Chravel",
   slug: "chravel-mobile",
@@ -8,6 +27,7 @@ module.exports = ({ config }) => ({
   icon: "./assets/icon.png",
   userInterfaceStyle: "automatic",
   scheme: "chravel",
+  // @ts-ignore
   newArchEnabled: true,
   splash: {
     image: "./assets/splash.png",
@@ -150,6 +170,7 @@ module.exports = ({ config }) => ({
     },
     package: "com.chravel.app",
     versionCode: 1,
+    googleServicesFile: process.env.GOOGLE_SERVICES_JSON || "./google-services.json",
     permissions: [
       "CAMERA",
       "READ_EXTERNAL_STORAGE",
@@ -175,6 +196,13 @@ module.exports = ({ config }) => ({
         ],
         category: ["BROWSABLE", "DEFAULT"],
       },
+      {
+        action: "VIEW",
+        data: [
+          { scheme: "chravel", host: "auth-callback" }
+        ],
+        category: ["BROWSABLE", "DEFAULT"],
+      }
     ],
   },
   plugins: [
@@ -199,7 +227,7 @@ module.exports = ({ config }) => ({
   ],
   extra: {
     eas: { projectId: "a543c88d-bece-4433-9aa2-d0e842a5c927" },
-    webAppUrl: "https://chravel.app",
+    webAppUrl: process.env.EXPO_PUBLIC_WEB_APP_URL || "https://chravel.app",
     revenueCatIosApiKey: process.env.REVENUECAT_IOS_API_KEY || "",
     revenueCatAndroidApiKey: process.env.REVENUECAT_ANDROID_API_KEY || "",
   },

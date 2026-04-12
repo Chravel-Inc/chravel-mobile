@@ -13,7 +13,7 @@ import * as Linking from "expo-linking";
 import { Share } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { WEB_APP_URL, NATIVE_USER_AGENT_SUFFIX, COLORS } from "./constants";
+import { WEB_APP_URL, NATIVE_USER_AGENT_SUFFIX, COLORS, IS_TABLET } from "./constants";
 import { buildInjectedJS, buildWebEvent, parseBridgeMessage } from "./bridge";
 import {
   registerForPushNotifications,
@@ -379,10 +379,10 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         ref={webViewRef}
         source={{ uri: `${WEB_APP_URL}/auth` }}
         style={styles.webview}
-        injectedJavaScriptBeforeContentLoaded={buildInjectedJS(Platform.OS, insets.bottom, Platform.isPad === true)}
+        injectedJavaScriptBeforeContentLoaded={buildInjectedJS(Platform.OS, insets.bottom, IS_TABLET)}
         onMessage={handleMessage}
         userAgent={Platform.OS === "ios"
-          ? Platform.isPad
+          ? IS_TABLET
             ? `Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/604.1 ${NATIVE_USER_AGENT_SUFFIX}`
             : `Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1 ${NATIVE_USER_AGENT_SUFFIX}`
           : undefined}
