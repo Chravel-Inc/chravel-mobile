@@ -3,7 +3,29 @@ jest.mock("expo-linking", () => ({
   addEventListener: jest.fn(),
 }));
 
-import { parseDeepLinkUrl } from "../deepLinking";
+import { parseDeepLinkUrl, isAuthScreenUrl } from "../deepLinking";
+
+describe("isAuthScreenUrl", () => {
+  it("is true for /auth on chravel.app", () => {
+    expect(isAuthScreenUrl("https://chravel.app/auth")).toBe(true);
+  });
+
+  it("is true for /auth/ subpaths", () => {
+    expect(isAuthScreenUrl("https://chravel.app/auth/callback")).toBe(true);
+  });
+
+  it("is false for /terms (substring false positive)", () => {
+    expect(isAuthScreenUrl("https://chravel.app/terms")).toBe(false);
+  });
+
+  it("is false for /author", () => {
+    expect(isAuthScreenUrl("https://chravel.app/author/foo")).toBe(false);
+  });
+
+  it("is false for other hosts", () => {
+    expect(isAuthScreenUrl("https://evil.com/auth")).toBe(false);
+  });
+});
 
 describe("parseDeepLinkUrl", () => {
   describe("custom scheme (chravel://)", () => {

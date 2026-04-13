@@ -20,7 +20,7 @@ import {
   getNotificationDeepLink,
 } from "./notifications";
 import { triggerHaptic } from "./haptics";
-import { getInitialURL, onDeepLink } from "./deepLinking";
+import { getInitialURL, onDeepLink, isAuthScreenUrl } from "./deepLinking";
 import {
   configureRevenueCat,
   identifyUser,
@@ -200,7 +200,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         // On normal load (no redirect), dismiss immediately.
         if (
           isAuthRedirectRef.current &&
-          currentUrlRef.current.includes("/auth")
+          isAuthScreenUrl(currentUrlRef.current)
         ) {
           // Still processing tokens on /auth — wait
         } else {
@@ -212,7 +212,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
           const pending = initialUrlRef.current;
           const deferForOAuth =
             isAuthRedirectRef.current &&
-            currentUrlRef.current.includes("/auth") &&
+            isAuthScreenUrl(currentUrlRef.current) &&
             !pending.startsWith("/auth-callback");
           if (deferForOAuth) {
             // Keep pending trip / push route until OAuth leaves /auth (see onNavigationStateChange).
@@ -399,7 +399,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         onNavigationStateChange={(navState) => {
           const url = navState.url ?? "";
           currentUrlRef.current = url;
-          const onAuth = url.includes("/auth");
+          const onAuth = isAuthScreenUrl(url);
 
           if (wasOnAuthRef.current && !onAuth && url.startsWith(WEB_APP_URL)) {
             if (isAuthRedirectRef.current) {
