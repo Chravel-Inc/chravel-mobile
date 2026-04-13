@@ -64,6 +64,24 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   const voiceBridgeRef = useRef(new VoiceBridge());
   const isReadyRef = useRef(false);
   const initialUrlRef = useRef<string | null>(null);
+  const loadingHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearLoadingFallbackTimer = useCallback(() => {
+    if (loadingHideTimerRef.current !== null) {
+      clearTimeout(loadingHideTimerRef.current);
+      loadingHideTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleLoadingFallback = useCallback(() => {
+    clearLoadingFallbackTimer();
+    loadingHideTimerRef.current = setTimeout(() => {
+      loadingHideTimerRef.current = null;
+      setIsLoading(false);
+    }, 5000);
+  }, [clearLoadingFallbackTimer]);
+
+  useEffect(() => () => clearLoadingFallbackTimer(), [clearLoadingFallbackTimer]);
 
   // ── Initialize native SDKs ──────────────────────────────────
 
@@ -94,6 +112,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
       if (path.startsWith("/auth-callback")) {
         oauthOpenedAtRef.current = null;
         isAuthRedirectRef.current = true;
+        clearLoadingFallbackTimer();
         setIsLoading(true);
         const hash = path.includes("#")
           ? path.substring(path.indexOf("#"))
@@ -112,7 +131,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
       }
       navigateWebView(path);
     },
-    [navigateWebView],
+    [navigateWebView, clearLoadingFallbackTimer],
   );
 
   useEffect(() => {
@@ -148,6 +167,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
           if (oauthOpenedAtRef.current === openedAt) {
             oauthOpenedAtRef.current = null;
             isAuthRedirectRef.current = false;
+            clearLoadingFallbackTimer();
             setIsLoading(false);
             // OAuth cancelled — apply any non-callback deep link deferred during /auth.
             const pending = initialUrlRef.current;
@@ -163,7 +183,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
       if (recoveryTimer) clearTimeout(recoveryTimer);
       subscription.remove();
     };
-  }, [handleIncomingPath]);
+  }, [handleIncomingPath, clearLoadingFallbackTimer]);
 
   // ── Push notification taps ──────────────────────────────────
 
@@ -196,13 +216,16 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
 
     switch (message.type) {
       case "ready":
+        clearLoadingFallbackTimer();
         // After OAuth redirect, keep overlay up until we leave /auth.
         // On normal load (no redirect), dismiss immediately.
         if (
           isAuthRedirectRef.current &&
           currentUrlRef.current.includes("/auth")
         ) {
-          // Still processing tokens on /auth — wait
+          // Still processing tokens on /auth — wait; restart stuck-state window
+          // so a timer from an earlier load cannot dismiss the overlay mid-OAuth.
+          scheduleLoadingFallback();
         } else {
           isAuthRedirectRef.current = false;
           setIsLoading(false);
@@ -314,7 +337,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         break;
       }
     }
-  }, [handleIncomingPath]);
+  }, [handleIncomingPath, clearLoadingFallbackTimer, scheduleLoadingFallback]);
 
   // ── URL filter ──────────────────────────────────────────────
 
@@ -406,6 +429,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
               // OAuth just completed — dismiss overlay now that we've
               // left /auth and landed on the authenticated page.
               isAuthRedirectRef.current = false;
+              clearLoadingFallbackTimer();
               setIsLoading(false);
             }
             // Apply any deep link deferred while OAuth was finishing on /auth.
@@ -422,7 +446,8 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
           // Don't hide the overlay here — wait for the "ready" bridge
           // message from the web app (sent after auth hydration).
           // Fallback: hide after 5 seconds if the signal never arrives.
-          setTimeout(() => setIsLoading(false), 5000);
+          // Replace any prior fallback so stacked loads / OAuth cannot fire stale timers.
+          scheduleLoadingFallback();
         }}
         onError={() => onError()}
         onHttpError={(syntheticEvent) => {
