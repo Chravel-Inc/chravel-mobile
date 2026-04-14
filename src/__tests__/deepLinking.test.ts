@@ -3,7 +3,15 @@ jest.mock("expo-linking", () => ({
   addEventListener: jest.fn(),
 }));
 
-import { parseDeepLinkUrl, isAuthScreenUrl } from "../deepLinking";
+jest.mock("../constants", () => ({
+  WEB_APP_URL: "https://chravel.app",
+}));
+
+import {
+  buildWebViewLaunchUrl,
+  parseDeepLinkUrl,
+  isAuthScreenUrl,
+} from "../deepLinking";
 
 describe("isAuthScreenUrl", () => {
   it("is true for /auth on chravel.app", () => {
@@ -86,5 +94,37 @@ describe("parseDeepLinkUrl", () => {
       const result = parseDeepLinkUrl("chravel://");
       expect(result).not.toBeNull();
     });
+  });
+});
+
+describe("buildWebViewLaunchUrl", () => {
+  it("adds app_context=native to auth launch URL", () => {
+    expect(buildWebViewLaunchUrl("/auth")).toBe(
+      "https://chravel.app/auth?app_context=native",
+    );
+  });
+
+  it("preserves deep-link path/query while appending app_context", () => {
+    expect(buildWebViewLaunchUrl("/trip/abc?tab=chat&thread=t1")).toBe(
+      "https://chravel.app/trip/abc?tab=chat&thread=t1&app_context=native",
+    );
+  });
+
+  it("preserves hash fragments", () => {
+    expect(buildWebViewLaunchUrl("/auth#access_token=xyz")).toBe(
+      "https://chravel.app/auth?app_context=native#access_token=xyz",
+    );
+  });
+
+  it("does not rewrite deep links to root", () => {
+    expect(buildWebViewLaunchUrl("/join/invite123")).toBe(
+      "https://chravel.app/join/invite123?app_context=native",
+    );
+  });
+
+  it("forces app_context=native when param already exists", () => {
+    expect(
+      buildWebViewLaunchUrl("/trip/abc?app_context=web&tab=plan"),
+    ).toBe("https://chravel.app/trip/abc?app_context=native&tab=plan");
   });
 });
