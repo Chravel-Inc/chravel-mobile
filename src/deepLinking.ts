@@ -64,7 +64,18 @@ export function parseDeepLinkUrl(url: string): string | null {
  */
 export function buildWebViewLaunchUrl(path: string): string {
   const normalizedPath = path ? (path.startsWith("/") ? path : `/${path}`) : "/auth";
-  const target = new URL(normalizedPath, WEB_APP_URL);
+  const baseOrigin = new URL(WEB_APP_URL).origin;
+  let target: URL;
+  try {
+    target = new URL(normalizedPath, WEB_APP_URL);
+  } catch {
+    target = new URL("/auth", WEB_APP_URL);
+  }
+  // Scheme-relative paths like "//evil.com/foo" resolve against WEB_APP_URL's
+  // origin and become https://evil.com/... — never load that inside the WebView.
+  if (target.origin !== baseOrigin) {
+    target = new URL("/auth", WEB_APP_URL);
+  }
   target.searchParams.set("app_context", "native");
   return target.toString();
 }
