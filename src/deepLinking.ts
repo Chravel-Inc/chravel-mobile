@@ -59,6 +59,17 @@ export function parseDeepLinkUrl(url: string): string | null {
 }
 
 /**
+ * Build a web URL for the in-app WebView.
+ * Always appends app_context=native while preserving path/query/hash.
+ */
+export function buildWebViewLaunchUrl(path: string): string {
+  const normalizedPath = path ? (path.startsWith("/") ? path : `/${path}`) : "/auth";
+  const target = new URL(normalizedPath, WEB_APP_URL);
+  target.searchParams.set("app_context", "native");
+  return target.toString();
+}
+
+/**
  * Get the URL the app was cold-started with, if any.
  */
 export async function getInitialURL(): Promise<string | null> {

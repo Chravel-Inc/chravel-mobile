@@ -20,7 +20,12 @@ import {
   getNotificationDeepLink,
 } from "./notifications";
 import { triggerHaptic } from "./haptics";
-import { getInitialURL, onDeepLink, isAuthScreenUrl } from "./deepLinking";
+import {
+  buildWebViewLaunchUrl,
+  getInitialURL,
+  onDeepLink,
+  isAuthScreenUrl,
+} from "./deepLinking";
 import {
   configureRevenueCat,
   identifyUser,
@@ -58,7 +63,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const insets = useSafeAreaInsets();
   const wasOnAuthRef = useRef(true); // WebView starts at /auth
-  const currentUrlRef = useRef(`${WEB_APP_URL}/auth`);
+  const currentUrlRef = useRef(buildWebViewLaunchUrl("/auth"));
   const isAuthRedirectRef = useRef(false); // true after OAuth deep link
   const oauthOpenedAtRef = useRef<number | null>(null);
   const voiceBridgeRef = useRef(new VoiceBridge());
@@ -100,7 +105,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   // ── Deep linking ────────────────────────────────────────────
 
   const navigateWebView = useCallback((path: string) => {
-    const fullUrl = `${WEB_APP_URL}${path}`;
+    const fullUrl = buildWebViewLaunchUrl(path);
     webViewRef.current?.injectJavaScript(
       `window.location.href = ${JSON.stringify(fullUrl)}; true;`,
     );
@@ -121,7 +126,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
           // Inject the token hash into the current page (/auth) so
           // Supabase JS detects the session tokens without navigating.
           webViewRef.current?.injectJavaScript(
-            `window.location.href = ${JSON.stringify(`${WEB_APP_URL}/auth${hash}`)}; true;`,
+            `window.location.href = ${JSON.stringify(buildWebViewLaunchUrl(`/auth${hash}`))}; true;`,
           );
         } else {
           // No hash — reload auth page to re-check session
@@ -400,7 +405,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
 
       <WebView
         ref={webViewRef}
-        source={{ uri: `${WEB_APP_URL}/auth` }}
+        source={{ uri: buildWebViewLaunchUrl("/auth") }}
         style={styles.webview}
         injectedJavaScriptBeforeContentLoaded={buildInjectedJS(Platform.OS, insets.bottom, IS_TABLET)}
         onMessage={handleMessage}
