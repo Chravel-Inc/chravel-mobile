@@ -127,4 +127,10 @@ describe("buildWebViewLaunchUrl", () => {
       buildWebViewLaunchUrl("/trip/abc?app_context=web&tab=plan"),
     ).toBe("https://chravel.app/trip/abc?app_context=native&tab=plan");
   });
+
+  it("does not resolve scheme-relative paths to foreign origins", () => {
+    expect(buildWebViewLaunchUrl("//evil.example/phish")).toBe(
+      "https://chravel.app/auth?app_context=native",
+    );
+  });
 });
