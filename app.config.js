@@ -31,7 +31,7 @@ module.exports = ({ config }) => ({
         splash: {
     image: "./assets/splash.png",
           resizeMode: "contain",
-          backgroundColor: "#191817",
+          backgroundColor: "#0b0b0f",
       },
         assetBundlePatterns: ["**/*"],
             ios: {
@@ -208,7 +208,10 @@ module.exports = ({ config }) => ({
                   image: "./assets/splash.png",
                             imageWidth: 200,
                             resizeMode: "contain",
-                            backgroundColor: "#191817",
+                            backgroundColor: "#0b0b0f",
+                            spinnerColor: "#c49746",
+                            iosSpinnerStyle: "small",
+                            androidSpinnerStyle: "small",
                     },
     ],
             ],
