@@ -7,7 +7,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "test": "jest"
+    "test": "jest",
+        "eas-build-pre-install": "echo $GOOGLE_SERVICES_JSON > google-services.json"
   },
   "dependencies": {
     "@mykin-ai/expo-audio-stream": "^0.3.5",
