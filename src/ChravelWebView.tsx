@@ -26,6 +26,7 @@ import {
   onDeepLink,
   isAuthScreenUrl,
 } from "./deepLinking";
+import { isAllowedAuxiliaryHost } from "./webviewHosts";
 import {
   configureRevenueCat,
   identifyUser,
@@ -384,7 +385,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
 
       try {
         const host = new URL(url).hostname;
-        if (ALLOWED_HOSTS.some((h) => host.endsWith(h))) {
+        if (isAllowedAuxiliaryHost(host, ALLOWED_HOSTS)) {
           return true;
         }
       } catch {
