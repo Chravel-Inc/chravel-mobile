@@ -46,8 +46,11 @@ const ALLOWED_ORIGINS_REGEX = new RegExp(
     ")",
 );
 
+/** Real Supabase project hosts only (*.supabase.co), not suffix lookalikes. */
+const SUPABASE_PROJECT_DOMAIN = "supabase.co";
+
 const ALLOWED_HOSTS = [
-  "supabase.co",
+  SUPABASE_PROJECT_DOMAIN,
   "js.stripe.com",
   "checkout.stripe.com",
   "api.stripe.com",
@@ -360,18 +363,28 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
       }
 
       // Intercept OAuth URLs — Google blocks sign-in inside embedded WebViews.
-      // Check raw URL string first (catches redirects before hostname resolves).
+      // Google / Apple: substring on full URL is fine (fixed hostnames).
+      // Supabase: require a real *.supabase.co host so "notsupabase.co" cannot match.
+      let isSupabaseHostedOAuth = false;
+      try {
+        const parsed = new URL(url);
+        isSupabaseHostedOAuth =
+          isAllowedAuxiliaryHost(parsed.hostname, [SUPABASE_PROJECT_DOMAIN]) &&
+          (url.includes("provider=google") || url.includes("provider=apple"));
+      } catch {
+        // ignore
+      }
+
       const isOAuthURL =
         url.includes("accounts.google.com") ||
         url.includes("appleid.apple.com") ||
-        (url.includes("supabase.co") &&
-          (url.includes("provider=google") || url.includes("provider=apple")));
+        isSupabaseHostedOAuth;
 
       if (isOAuthURL) {
         // Rewrite the Supabase redirect_to so OAuth lands on our
         // custom scheme instead of loading chravel.app in the browser.
         let oauthUrl = url;
-        if (url.includes("supabase.co") && url.includes("redirect_to=")) {
+        if (isSupabaseHostedOAuth && url.includes("redirect_to=")) {
           const callbackUrl = `chravel://auth-callback/${Date.now()}`;
           oauthUrl = url.replace(
             /redirect_to=[^&]+/,
