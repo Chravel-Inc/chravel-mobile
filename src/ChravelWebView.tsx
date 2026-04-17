@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  AppState,
   Platform,
   StyleSheet,
   View,
@@ -65,7 +64,6 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   const wasOnAuthRef = useRef(true); // WebView starts at /auth
   const currentUrlRef = useRef(buildWebViewLaunchUrl("/auth"));
   const isAuthRedirectRef = useRef(false); // true after OAuth deep link
-  const oauthOpenedAtRef = useRef<number | null>(null);
   const voiceBridgeRef = useRef(new VoiceBridge());
   const isReadyRef = useRef(false);
   const initialUrlRef = useRef<string | null>(null);
@@ -115,7 +113,6 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   const handleIncomingPath = useCallback(
     (path: string) => {
       if (path.startsWith("/auth-callback")) {
-        oauthOpenedAtRef.current = null;
         isAuthRedirectRef.current = true;
         clearLoadingFallbackTimer();
         setIsLoading(true);
@@ -158,37 +155,6 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
     });
     return unsub;
   }, [handleIncomingPath]);
-
-  // ── OAuth Safari return recovery ────────────────────────────
-  // If the user returns from Safari without completing OAuth
-  // (cancelled, closed, etc.), reset the loading state.
-
-  useEffect(() => {
-    let recoveryTimer: ReturnType<typeof setTimeout> | null = null;
-    const subscription = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "active" && oauthOpenedAtRef.current) {
-        const openedAt = oauthOpenedAtRef.current;
-        recoveryTimer = setTimeout(() => {
-          if (oauthOpenedAtRef.current === openedAt) {
-            oauthOpenedAtRef.current = null;
-            isAuthRedirectRef.current = false;
-            clearLoadingFallbackTimer();
-            setIsLoading(false);
-            // OAuth cancelled — apply any non-callback deep link deferred during /auth.
-            const pending = initialUrlRef.current;
-            if (pending && !pending.startsWith("/auth-callback")) {
-              initialUrlRef.current = null;
-              handleIncomingPath(pending);
-            }
-          }
-        }, 3000);
-      }
-    });
-    return () => {
-      if (recoveryTimer) clearTimeout(recoveryTimer);
-      subscription.remove();
-    };
-  }, [handleIncomingPath, clearLoadingFallbackTimer]);
 
   // ── Push notification taps ──────────────────────────────────
 
@@ -358,7 +324,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         return true;
       }
 
-      // Intercept OAuth URLs — Google blocks sign-in inside embedded WebViews.
+      // Intercept OAuth URLs so native can choose in-WebView vs external handling.
       // Check raw URL string first (catches redirects before hostname resolves).
       const isOAuthURL =
         url.includes("accounts.google.com") ||
@@ -367,8 +333,15 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
           (url.includes("provider=google") || url.includes("provider=apple")));
 
       if (isOAuthURL) {
-        // Rewrite the Supabase redirect_to so OAuth lands on our
-        // custom scheme instead of loading chravel.app in the browser.
+        const shouldKeepOAuthInWebView =
+          Platform.OS === "ios" || Platform.OS === "android";
+
+        if (shouldKeepOAuthInWebView) {
+          return true;
+        }
+
+        // Fallback path for non-native contexts that still need
+        // external OAuth handling and deep-link return.
         let oauthUrl = url;
         if (url.includes("supabase.co") && url.includes("redirect_to=")) {
           const callbackUrl = `chravel://auth-callback/${Date.now()}`;
@@ -377,7 +350,6 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
             `redirect_to=${encodeURIComponent(callbackUrl)}`,
           );
         }
-        oauthOpenedAtRef.current = Date.now();
         Linking.openURL(oauthUrl);
         return false;
       }
