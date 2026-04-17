@@ -34,25 +34,8 @@ import {
   getCustomerInfo,
 } from "./revenuecat";
 import { VoiceBridge, type VoiceBridgeMessage } from "./voiceBridge";
-
-const ALLOWED_ORIGINS = [WEB_APP_URL, "about:", "data:"];
-
-const ALLOWED_ORIGINS_REGEX = new RegExp(
-  "^(?:" +
-    ALLOWED_ORIGINS.map((o) =>
-      o.replace(/[.*+?^\$\{\}()|[\]\\]/g, "\\$&"),
-    ).join("|") +
-    ")",
-);
-
-const ALLOWED_HOSTS = [
-  "supabase.co",
-  "js.stripe.com",
-  "checkout.stripe.com",
-  "api.stripe.com",
-  "maps.googleapis.com",
-  "maps.google.com",
-];
+import { evaluateWebViewRequestPolicy } from "./webViewRequestFilter";
+import { evaluateReadyDecision } from "./authRouting";
 
 interface ChravelWebViewProps {
   onError: () => void;
@@ -187,36 +170,28 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
     if (!message) return;
 
     switch (message.type) {
-      case "ready":
+      case "ready": {
         clearLoadingFallbackTimer();
-        // After OAuth redirect, keep overlay up until we leave /auth.
-        // On normal load (no redirect), dismiss immediately.
-        if (
-          isAuthRedirectRef.current &&
-          isAuthScreenUrl(currentUrlRef.current)
-        ) {
-          // Still processing tokens on /auth — wait; restart stuck-state window
-          // so a timer from an earlier load cannot dismiss the overlay mid-OAuth.
+        const decision = evaluateReadyDecision({
+          isAuthRedirect: isAuthRedirectRef.current,
+          currentUrl: currentUrlRef.current,
+          pendingPath: initialUrlRef.current,
+        });
+
+        if (decision.keepLoadingOverlay) {
           scheduleLoadingFallback();
         } else {
           isAuthRedirectRef.current = false;
           setIsLoading(false);
         }
+
         isReadyRef.current = true;
-        if (initialUrlRef.current) {
-          const pending = initialUrlRef.current;
-          const deferForOAuth =
-            isAuthRedirectRef.current &&
-            isAuthScreenUrl(currentUrlRef.current) &&
-            !pending.startsWith("/auth-callback");
-          if (deferForOAuth) {
-            // Keep pending trip / push route until OAuth leaves /auth (see onNavigationStateChange).
-          } else {
-            initialUrlRef.current = null;
-            handleIncomingPath(pending);
-          }
+        if (decision.applyPathNow) {
+          initialUrlRef.current = null;
+          handleIncomingPath(decision.applyPathNow);
         }
         break;
+      }
 
       case "haptic":
         await triggerHaptic(message.style);
@@ -315,57 +290,17 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
 
   const shouldLoadRequest = useCallback(
     (request: { url: string; isTopFrame?: boolean }) => {
-      const url = request.url;
+      const decision = evaluateWebViewRequestPolicy({
+        url: request.url,
+        isTopFrame: request.isTopFrame,
+        platformOS: Platform.OS,
+      });
 
-      if (request.isTopFrame === false) {
-        return true;
+      if (decision.externalUrlToOpen) {
+        Linking.openURL(decision.externalUrlToOpen);
       }
 
-      if (ALLOWED_ORIGINS_REGEX.test(url)) {
-        return true;
-      }
-
-      // Intercept OAuth URLs so native can choose in-WebView vs external handling.
-      // Check raw URL string first (catches redirects before hostname resolves).
-      const isOAuthURL =
-        url.includes("accounts.google.com") ||
-        url.includes("appleid.apple.com") ||
-        (url.includes("supabase.co") &&
-          (url.includes("provider=google") || url.includes("provider=apple")));
-
-      if (isOAuthURL) {
-        const shouldKeepOAuthInWebView =
-          Platform.OS === "ios" || Platform.OS === "android";
-
-        if (shouldKeepOAuthInWebView) {
-          return true;
-        }
-
-        // Fallback path for non-native contexts that still need
-        // external OAuth handling and deep-link return.
-        let oauthUrl = url;
-        if (url.includes("supabase.co") && url.includes("redirect_to=")) {
-          const callbackUrl = `chravel://auth-callback/${Date.now()}`;
-          oauthUrl = url.replace(
-            /redirect_to=[^&]+/,
-            `redirect_to=${encodeURIComponent(callbackUrl)}`,
-          );
-        }
-        Linking.openURL(oauthUrl);
-        return false;
-      }
-
-      try {
-        const host = new URL(url).hostname;
-        if (ALLOWED_HOSTS.some((h) => host.endsWith(h))) {
-          return true;
-        }
-      } catch {
-        return false;
-      }
-
-      Linking.openURL(url);
-      return false;
+      return decision.allowInWebView;
     },
     [],
   );
