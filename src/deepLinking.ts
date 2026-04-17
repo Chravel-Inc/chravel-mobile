@@ -58,15 +58,23 @@ export function parseDeepLinkUrl(url: string): string | null {
   }
 }
 
+/** Single source of truth for native shell auth bootstrap route. */
+export const AUTH_LAUNCH_PATH = "/auth";
+
 /**
  * Build a web URL for the in-app WebView.
  * Always appends app_context=native while preserving path/query/hash.
  */
 export function buildWebViewLaunchUrl(path: string): string {
-  const normalizedPath = path ? (path.startsWith("/") ? path : `/${path}`) : "/auth";
+  const normalizedPath = path ? (path.startsWith("/") ? path : `/${path}`) : AUTH_LAUNCH_PATH;
   const target = new URL(normalizedPath, WEB_APP_URL);
   target.searchParams.set("app_context", "native");
   return target.toString();
+}
+
+/** Native shell launch target contract: /auth?app_context=native. */
+export function buildNativeAuthLaunchUrl(): string {
+  return buildWebViewLaunchUrl(AUTH_LAUNCH_PATH);
 }
 
 /**
