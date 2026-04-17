@@ -32,6 +32,28 @@
                     }
         },
         "submit": {
+                    "development": {
+                                    "ios": {
+                    "appleId": "ops@chravelapp.com",
+                                                        "ascAppId": "6761122822",
+                                                        "appleTeamId": "2T6WY43H3X"
+                                    },
+                                    "android": {
+                                                        "serviceAccountKeyPath": "./play-store-service-account.json",
+                                                        "track": "internal"
+                                    }
+                    },
+                    "preview": {
+                                    "ios": {
+                    "appleId": "ops@chravelapp.com",
+                                                        "ascAppId": "6761122822",
+                                                        "appleTeamId": "2T6WY43H3X"
+                                    },
+                                    "android": {
+                                                        "serviceAccountKeyPath": "./play-store-service-account.json",
+                                                        "track": "internal"
+                                    }
+                    },
                     "production": {
                                     "ios": {
                     "appleId": "ops@chravelapp.com",
