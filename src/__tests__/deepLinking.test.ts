@@ -11,6 +11,8 @@ import {
   buildWebViewLaunchUrl,
   parseDeepLinkUrl,
   isAuthScreenUrl,
+  AUTH_LAUNCH_PATH,
+  buildNativeAuthLaunchUrl,
 } from "../deepLinking";
 
 describe("isAuthScreenUrl", () => {
@@ -94,6 +96,19 @@ describe("parseDeepLinkUrl", () => {
       const result = parseDeepLinkUrl("chravel://");
       expect(result).not.toBeNull();
     });
+  });
+});
+
+
+describe("native auth launch contract", () => {
+  it("keeps auth path constant as /auth", () => {
+    expect(AUTH_LAUNCH_PATH).toBe("/auth");
+  });
+
+  it("builds /auth?app_context=native from shared helper", () => {
+    expect(buildNativeAuthLaunchUrl()).toBe(
+      "https://chravel.app/auth?app_context=native",
+    );
   });
 });
 

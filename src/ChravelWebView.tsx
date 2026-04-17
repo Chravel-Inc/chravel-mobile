@@ -21,6 +21,7 @@ import {
 import { triggerHaptic } from "./haptics";
 import {
   buildWebViewLaunchUrl,
+  buildNativeAuthLaunchUrl,
   getInitialURL,
   onDeepLink,
   isAuthScreenUrl,
@@ -62,7 +63,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const insets = useSafeAreaInsets();
   const wasOnAuthRef = useRef(true); // WebView starts at /auth
-  const currentUrlRef = useRef(buildWebViewLaunchUrl("/auth"));
+  const currentUrlRef = useRef(buildNativeAuthLaunchUrl());
   const isAuthRedirectRef = useRef(false); // true after OAuth deep link
   const voiceBridgeRef = useRef(new VoiceBridge());
   const isReadyRef = useRef(false);
@@ -377,7 +378,7 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
 
       <WebView
         ref={webViewRef}
-        source={{ uri: buildWebViewLaunchUrl("/auth") }}
+        source={{ uri: buildNativeAuthLaunchUrl() }}
         style={styles.webview}
         injectedJavaScriptBeforeContentLoaded={buildInjectedJS(Platform.OS, insets.bottom, IS_TABLET)}
         onMessage={handleMessage}
