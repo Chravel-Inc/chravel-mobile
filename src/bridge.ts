@@ -14,6 +14,7 @@
 
 export type BridgeMessage =
   | { type: "haptic"; style: HapticStyle }
+  | { type: "browser:open"; url: string; presentationStyle?: "fullscreen" | "pageSheet" | "formSheet" | "popover" }
   | { type: "push:register" }
   | { type: "push:unregister" }
   | { type: "revenuecat:purchase"; packageId: string }
@@ -57,6 +58,25 @@ export function buildWebEvent(name: string, detail: Record<string, unknown>): st
  */
 export function buildInjectedJS(platform: string, bottomInset: number = 0, isTablet: boolean = false): string {
   return `
+    window.Capacitor = window.Capacitor || {};
+    window.Capacitor.isNativePlatform = function() { return true; };
+    window.Capacitor.Plugins = window.Capacitor.Plugins || {};
+    window.Capacitor.Plugins.Browser = {
+      open: function(options) {
+        var payload = {
+          type: 'browser:open',
+          url: options && options.url ? String(options.url) : '',
+          presentationStyle: options && options.presentationStyle ? String(options.presentationStyle) : undefined
+        };
+        window.ReactNativeWebView.postMessage(JSON.stringify(payload));
+        return Promise.resolve();
+      },
+      close: function() {
+        return Promise.resolve();
+      }
+    };
+    console.log('Capacitor Browser available:', !!window.Capacitor?.Plugins?.Browser);
+
     window.ChravelNative = {
       platform: "${platform}",
       isNative: true,
@@ -135,6 +155,12 @@ export function parseBridgeMessage(raw: string): BridgeMessage | null {
             data.style,
           )
         ) {
+          return data as BridgeMessage;
+        }
+        return null;
+
+      case "browser:open":
+        if (typeof data.url === "string") {
           return data as BridgeMessage;
         }
         return null;

@@ -181,6 +181,7 @@ module.exports = ({ config }) => ({
 { scheme: "https", host: "chravel.app", pathPrefix: "/share" },
 { scheme: "https", host: "chravel.app", pathPrefix: "/profile" },
 { scheme: "https", host: "chravel.app", pathPrefix: "/organization" },
+{ scheme: "https", host: "chravel.app", pathPrefix: "/auth-callback" },
           ],
           category: ["BROWSABLE", "DEFAULT"],
   },

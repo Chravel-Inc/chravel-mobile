@@ -26,6 +26,7 @@ export interface RequestPolicyInput {
 export interface RequestPolicyResult {
   allowInWebView: boolean;
   externalUrlToOpen?: string;
+  openInAppBrowser?: boolean;
 }
 
 export function evaluateWebViewRequestPolicy({
@@ -48,25 +49,10 @@ export function evaluateWebViewRequestPolicy({
       (url.includes("provider=google") || url.includes("provider=apple")));
 
   if (isOAuthURL) {
-    const shouldKeepOAuthInWebView =
-      platformOS === "ios" || platformOS === "android";
-
-    if (shouldKeepOAuthInWebView) {
-      return { allowInWebView: true };
-    }
-
-    let oauthUrl = url;
-    if (url.includes("supabase.co") && url.includes("redirect_to=")) {
-      const callbackUrl = `chravel://auth-callback/${Date.now()}`;
-      oauthUrl = url.replace(
-        /redirect_to=[^&]+/,
-        `redirect_to=${encodeURIComponent(callbackUrl)}`,
-      );
-    }
-
     return {
       allowInWebView: false,
-      externalUrlToOpen: oauthUrl,
+      externalUrlToOpen: url,
+      openInAppBrowser: platformOS === "ios" || platformOS === "android",
     };
   }
 

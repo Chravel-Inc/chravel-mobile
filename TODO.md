@@ -25,6 +25,7 @@
 - [ ] RevenueCat: add Google Play Store app, upload service account JSON, create matching subscriptions
 - [ ] Set `REVENUECAT_ANDROID_API_KEY` EAS env var
 - [ ] Deploy `/.well-known/assetlinks.json` on chravel.app for Android App Links (needs SHA-256 from Play Console → App signing)
+- [ ] Ensure `/.well-known/assetlinks.json` includes `/auth-callback` App Link support for `com.chravel.app` release SHA-256 (OAuth return path)
 
 ## Security
 - [ ] Ensure new repo (Chravel-Inc/ChravelApp) has no secrets in git history
@@ -35,6 +36,14 @@
 ## Deep Linking
 - [ ] Test universal links on physical device — AASA is deployed with paths for `/join/*`, `/trip/*`, `/event/*`, `/auth`, `/settings/*`. To test: (1) text yourself a link like `https://chravel.app/join/test123` and tap it — it should open in the app, not Safari. (2) Test cold start: force-quit the app, tap a link, verify the app launches and navigates to the right screen. (3) Test warm start: with the app in background, tap a link and verify it navigates correctly. If Universal Links don't fire, check Settings → Chravel → Associated Domains and ensure `applinks:chravel.app` is listed.
 - [ ] Test deep link handling (cold start + warm start)
+- [ ] Confirm AASA includes `/auth-callback` and `/auth-callback/*` for `2T6WY43H3X.com.chravel.app` and serves `application/json` with no redirects
+
+## Auth / OAuth Deployment Checklist
+- [ ] Supabase Dashboard → Authentication → URL Configuration includes:
+  - `https://chravel.app/auth-callback`
+  - `chravel://auth-callback`
+- [ ] Validate AASA at `https://chravel.app/.well-known/apple-app-site-association` (200, JSON, no redirects)
+- [ ] Validate Android App Links at `https://chravel.app/.well-known/assetlinks.json` (200, includes release SHA-256)
 
 ## Features
 - [ ] Bidirectional mic support — WebView config is in place, needs physical device testing
