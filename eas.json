@@ -1,69 +1,49 @@
 {
-        "cli": {
-                    "version": ">= 12.0.0",
-                    "appVersionSource": "remote"
-        },
-        "build": {
-                    "development": {
-                                    "developmentClient": true,
-                                    "distribution": "internal",
-                                    "ios": {
-                                                        "simulator": true
-                                    }
-                    },
-                    "preview": {
-                                    "distribution": "internal",
-                                    "ios": {
-                                                        "buildConfiguration": "Release"
-                                    },
-                                    "android": {
-                                                        "buildType": "apk"
-                                    }
-                    },
-                    "production": {
-                                    "ios": {
-                                                        "buildConfiguration": "Release",
-                                                        "autoIncrement": true
-                                    },
-                                    "android": {
-                                                        "buildType": "app-bundle",
-                                                        "autoIncrement": true
-                                    }
-                    }
-        },
-        "submit": {
-                    "development": {
-                                    "ios": {
-                    "appleId": "ops@chravelapp.com",
-                                                        "ascAppId": "6761122822",
-                                                        "appleTeamId": "2T6WY43H3X"
-                                    },
-                                    "android": {
-                                                        "serviceAccountKeyPath": "./play-store-service-account.json",
-                                                        "track": "internal"
-                                    }
-                    },
-                    "preview": {
-                                    "ios": {
-                    "appleId": "ops@chravelapp.com",
-                                                        "ascAppId": "6761122822",
-                                                        "appleTeamId": "2T6WY43H3X"
-                                    },
-                                    "android": {
-                                                        "serviceAccountKeyPath": "./play-store-service-account.json",
-                                                        "track": "internal"
-                                    }
-                    },
-                    "production": {
-                                    "ios": {
-                    "appleId": "ops@chravelapp.com",
-                                                        "ascAppId": "6761122822",
-                                                        "appleTeamId": "2T6WY43H3X"
-                                    },
-                                    "android": {
-                                                        "serviceAccountKeyPath": "./play-store-service-account.json",
-                                                        "track": "internal"
-                                    }
-                    }
-        }
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "ios": {
+        "buildConfiguration": "Release"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "channel": "production",
+      "autoIncrement": true,
+      "ios": {
+        "buildConfiguration": "Release"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "ops@chravelapp.com",
+        "ascAppId": "6761122822",
+        "appleTeamId": "2T6WY43H3X"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./play-store-service-account.json",
+        "track": "internal"
+      }
+    }
+  }
 }
