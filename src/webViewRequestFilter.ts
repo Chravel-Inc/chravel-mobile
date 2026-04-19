@@ -17,6 +17,11 @@ const ALLOWED_HOSTS = [
   "maps.google.com",
 ];
 
+/** True if hostname is exactly `suffix` or a direct subdomain (not a suffix-typo like eviljs.stripe.com). */
+function hostMatchesAllowedSuffix(host: string, suffix: string): boolean {
+  return host === suffix || host.endsWith(`.${suffix}`);
+}
+
 export interface RequestPolicyInput {
   url: string;
   isTopFrame?: boolean;
@@ -72,7 +77,7 @@ export function evaluateWebViewRequestPolicy({
 
   try {
     const host = new URL(url).hostname;
-    if (ALLOWED_HOSTS.some((h) => host.endsWith(h))) {
+    if (ALLOWED_HOSTS.some((h) => hostMatchesAllowedSuffix(host, h))) {
       return { allowInWebView: true };
     }
   } catch {
