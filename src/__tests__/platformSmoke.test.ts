@@ -2,7 +2,7 @@ import { evaluateWebViewRequestPolicy } from "../webViewRequestFilter";
 import { evaluateReadyDecision, resolveAuthSurface } from "../authRouting";
 
 describe("platform smoke scenarios", () => {
-  it("native/app path keeps OAuth in app and uses auth modal", () => {
+  it("native/app path routes OAuth to in-app browser and uses auth modal", () => {
     const oauthDecision = evaluateWebViewRequestPolicy({
       url: "https://accounts.google.com/o/oauth2/v2/auth",
       platformOS: "android",
@@ -10,7 +10,8 @@ describe("platform smoke scenarios", () => {
     });
     const surface = resolveAuthSurface("native");
 
-    expect(oauthDecision.allowInWebView).toBe(true);
+    expect(oauthDecision.allowInWebView).toBe(false);
+    expect(oauthDecision.openInAppBrowser).toBe(true);
     expect(surface).toBe("auth-modal");
   });
 

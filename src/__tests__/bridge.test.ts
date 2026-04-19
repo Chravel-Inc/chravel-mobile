@@ -18,6 +18,13 @@ describe("parseBridgeMessage", () => {
     expect(result).toEqual({ type: "share", url: "https://chravel.app/trip/123", title: "Trip" });
   });
 
+  it("parses a valid browser:open message", () => {
+    const result = parseBridgeMessage(
+      JSON.stringify({ type: "browser:open", url: "https://example.com", presentationStyle: "popover" })
+    );
+    expect(result).toEqual({ type: "browser:open", url: "https://example.com", presentationStyle: "popover" });
+  });
+
   it("parses a valid revenuecat:identify message", () => {
     const result = parseBridgeMessage(JSON.stringify({ type: "revenuecat:identify", userId: "user-123" }));
     expect(result).toEqual({ type: "revenuecat:identify", userId: "user-123" });
@@ -113,6 +120,7 @@ describe("buildWebEvent", () => {
 describe("buildInjectedJS", () => {
   it("includes ChravelNative object with platform", () => {
     const result = buildInjectedJS("ios");
+    expect(result).toContain("window.Capacitor.Plugins.Browser");
     expect(result).toContain('window.ChravelNative');
     expect(result).toContain('platform: "ios"');
     expect(result).toContain("isNative: true");

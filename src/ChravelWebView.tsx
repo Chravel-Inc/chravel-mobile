@@ -9,6 +9,7 @@ import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import { StatusBar } from "expo-status-bar";
 import * as Notifications from "expo-notifications";
 import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 import { Share } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -100,19 +101,8 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         isAuthRedirectRef.current = true;
         clearLoadingFallbackTimer();
         setIsLoading(true);
-        const hash = path.includes("#")
-          ? path.substring(path.indexOf("#"))
-          : "";
-        if (hash) {
-          // Inject the token hash into the current page (/auth) so
-          // Supabase JS detects the session tokens without navigating.
-          webViewRef.current?.injectJavaScript(
-            `window.location.href = ${JSON.stringify(buildWebViewLaunchUrl(`/auth${hash}`))}; true;`,
-          );
-        } else {
-          // No hash — reload auth page to re-check session
-          navigateWebView("/auth");
-        }
+        void WebBrowser.dismissBrowser();
+        navigateWebView(path);
         return;
       }
       navigateWebView(path);
@@ -195,6 +185,14 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
 
       case "haptic":
         await triggerHaptic(message.style);
+        break;
+
+      case "browser:open":
+        if (message.url) {
+          await WebBrowser.openBrowserAsync(message.url, {
+            presentationStyle: WebBrowser.WebBrowserPresentationStyle.POPOVER,
+          });
+        }
         break;
 
       case "push:register": {
@@ -297,7 +295,13 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
       });
 
       if (decision.externalUrlToOpen) {
-        Linking.openURL(decision.externalUrlToOpen);
+        if (decision.openInAppBrowser) {
+          void WebBrowser.openBrowserAsync(decision.externalUrlToOpen, {
+            presentationStyle: WebBrowser.WebBrowserPresentationStyle.POPOVER,
+          });
+        } else {
+          Linking.openURL(decision.externalUrlToOpen);
+        }
       }
 
       return decision.allowInWebView;
