@@ -158,7 +158,7 @@ module.exports = ({ config }) => ({
         },
             package: "com.chravel.app",
                   versionCode: 1,
-                  googleServicesFile: process.env.GOOGLE_SERVICES_JSON || "./google-services.json",
+                  googleServicesFile: "./google-services.json",
                   permissions: [
                     "CAMERA",
                     "READ_EXTERNAL_STORAGE",
