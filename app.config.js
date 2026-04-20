@@ -16,7 +16,7 @@ if (IS_PROD) {
   }
 }
 
-module.exports = ({ config }) => ({
+module.exports = ({ config }) => ({h
     ...config,
         name: "Chravel",
         slug: "chravel-mobile",
@@ -220,7 +220,7 @@ module.exports = ({ config }) => ({
                 "expo-splash-screen",
           {
                   image: "./assets/splash.png",
-                            imageWidth: 200,
+                            imageWidth: 420,
                             resizeMode: "contain",
                             backgroundColor: "#0b0b0f",
                             spinnerColor: "#c49746",
