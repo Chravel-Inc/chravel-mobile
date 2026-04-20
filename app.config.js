@@ -16,7 +16,7 @@ if (IS_PROD) {
   }
 }
 
-module.exports = ({ config }) => ({h
+module.exports = ({ config }) => ({
     ...config,
         name: "Chravel",
         slug: "chravel-mobile",
