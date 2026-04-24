@@ -1,0 +1,21 @@
+Chravel is a group travel planning app. Organize trips with your group using shared tools for chat, calendar, expenses, and an AI travel assistant.
+
+Features
+
+• Group chat — Real-time messaging with reactions for your travel group.
+• Shared calendar — Add events and agenda items; everyone on the trip sees updates.
+• Expense splitting — Track payments, balances, and who owes whom.
+• AI travel concierge — Ask questions in text or voice and get suggestions for places, dining, and activities.
+• Trip itineraries — Keep flights, lodging, and daily plans in one place.
+• Invitations — Share a trip link to add travelers to the group.
+• Push notifications — Get notified about chat messages, calendar changes, and expense requests.
+
+Account sign-in supports email, Google, and Apple.
+
+Subscriptions
+Chravel offers optional subscription tiers (Explorer and Frequent Chraveler) that unlock additional features. Subscriptions auto-renew and can be managed in your device store account settings.
+
+Privacy
+Chravel does not use third-party advertising trackers. Privacy Policy: https://chravel.app/privacy. Terms of Use: https://chravel.app/terms.
+
+Contact: support@chravel.app
