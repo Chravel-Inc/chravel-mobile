@@ -1,0 +1,39 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "copyright": "2026 Chravel, Inc.",
+    "info": {
+      "en-US": {
+        "title": "Chravel",
+        "subtitle": "Group Trip Planning",
+        "description": "Chravel is a group travel planning app. Organize trips with your group using shared tools for chat, calendar, expenses, and an AI travel assistant.\n\nFeatures\n\n• Group chat — Real-time messaging with reactions for your travel group.\n• Shared calendar — Add events and agenda items; everyone on the trip sees updates.\n• Expense splitting — Track payments, balances, and who owes whom.\n• AI travel concierge — Ask questions in text or voice and get suggestions for places, dining, and activities.\n• Trip itineraries — Keep flights, lodging, and daily plans in one place.\n• Invitations — Share a trip link to add travelers to the group.\n• Push notifications — Get notified about chat messages, calendar changes, and expense requests.\n\nAccount sign-in supports email, Google, and Apple.\n\nSubscriptions\nChravel offers optional subscription tiers (Explorer and Frequent Chraveler) that unlock additional features. Subscriptions auto-renew and can be managed in your device store account settings.\n\nPrivacy\nChravel does not use third-party advertising trackers. Privacy Policy: https://chravel.app/privacy. Terms of Use: https://chravel.app/terms.\n\nContact: support@chravel.app",
+        "keywords": [
+          "trip",
+          "travel",
+          "group",
+          "itinerary",
+          "planner",
+          "chat",
+          "expenses",
+          "calendar",
+          "vacation",
+          "concierge"
+        ],
+        "releaseNotes": "Initial release.",
+        "marketingUrl": "https://chravel.app",
+        "privacyPolicyUrl": "https://chravel.app/privacy",
+        "promoText": "Plan group trips with shared chat, calendar, expenses, and an AI travel assistant."
+      }
+    },
+    "categories": ["travel", "lifestyle"],
+    "review": {
+      "firstName": "Chravel",
+      "lastName": "Support",
+      "email": "ops@chravelapp.com",
+      "phone": "+1-555-000-0000",
+      "demoUsername": "demo@chravel.app",
+      "demoPassword": "DemoTrip2025!",
+      "notes": "See REVIEW_NOTES.md in the source repo for a full feature walkthrough. Demo account has pre-populated trips, chat, calendar events, and expense splits. Voice concierge: tap the AI tab, then the microphone icon. Native integrations (push, haptics, share sheet, deep links, RevenueCat subscriptions) require a native build — WebView-only features will not demonstrate these."
+    }
+  }
+}

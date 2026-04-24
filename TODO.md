@@ -7,6 +7,7 @@
 ## Before Store Submission
 - [ ] Set RevenueCat production API keys (iOS + Android) as EAS env vars
 - [ ] App Store review — submit with review notes (REVIEW_NOTES.md)
+- [ ] Run `npx eas-cli metadata:push` to sync App Store Connect listing from `store.config.json`
 - [ ] Update app icon to company logo
 
 ## Google Play Store Setup
@@ -14,7 +15,9 @@
 - [x] GCP service account created + permissions granted
 - [x] `GOOGLE_SERVICE_ACCOUNT_JSON` GitHub secret added
 - [x] Android CI/CD build job added to eas-build.yml
-- [ ] Create app listing in Play Console (name, descriptions, screenshots, feature graphic)
+- [x] Draft Play Console store listing copy — canonical source in `fastlane/metadata/android/en-US/` (2026-04-24)
+- [ ] Paste `fastlane/metadata/android/en-US/*.txt` into Play Console → Store presence → Main store listing → en-US
+- [ ] Upload Play Console screenshots + feature graphic (still TODO — no automated sync)
 - [ ] Complete content rating (IARC questionnaire)
 - [ ] Complete data safety section (mirror iOS privacy manifest)
 - [ ] Create internal testing track + add testers
