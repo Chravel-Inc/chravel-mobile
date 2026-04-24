@@ -82,9 +82,9 @@ describe("parseDeepLinkUrl", () => {
   });
 
   describe("edge cases", () => {
-    it("returns path for non-chravel URLs (fallback behavior)", () => {
-      // parseDeepLinkUrl returns the pathname for any URL with a leading slash
-      expect(parseDeepLinkUrl("https://google.com/search")).toBe("/search");
+    it("returns null for https URLs that are not Chravel hosts (no open redirect)", () => {
+      expect(parseDeepLinkUrl("https://google.com/search")).toBeNull();
+      expect(parseDeepLinkUrl("https://evil.com/trip/fake")).toBeNull();
     });
 
     it("returns null for empty string", () => {

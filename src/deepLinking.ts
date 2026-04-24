@@ -31,10 +31,6 @@ export function parseDeepLinkUrl(url: string): string | null {
       return parsed.pathname + parsed.search + parsed.hash;
     }
 
-    if (parsed.pathname.startsWith("/")) {
-      return parsed.pathname + parsed.search;
-    }
-
     return null;
   } catch {
     if (url.startsWith("chravel://")) {
