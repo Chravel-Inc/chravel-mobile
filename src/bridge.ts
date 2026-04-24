@@ -131,6 +131,88 @@ export function buildInjectedJS(platform: string, bottomInset: number = 0, isTab
       ].join('\\n');
       document.head.appendChild(style);
     })();
+
+    // Improve mobile tab UX (overflow clipping) and nudge data refresh
+    // after pin/unpin actions so the Pinned view hydrates reliably.
+    (function() {
+      function makeTabRowsScrollable() {
+        try {
+          var nodes = document.querySelectorAll('nav, [role="tablist"], [data-testid*="tab"], [class*="tab"], [class*="segment"]');
+          for (var i = 0; i < nodes.length; i++) {
+            var el = nodes[i];
+            if (!el || !el.children || el.children.length < 3) continue;
+            if (el.scrollWidth <= el.clientWidth + 4) continue;
+
+            el.style.overflowX = 'auto';
+            el.style.overflowY = 'hidden';
+            el.style.webkitOverflowScrolling = 'touch';
+            el.style.scrollbarWidth = 'none';
+            el.style.msOverflowStyle = 'none';
+            if (!el.style.paddingBottom) el.style.paddingBottom = '2px';
+          }
+        } catch (error) {
+          console.log('ChravelNative tab overflow patch error', error);
+        }
+      }
+
+      function nudgePinnedHydration() {
+        try {
+          window.dispatchEvent(new Event('focus'));
+          window.dispatchEvent(new Event('visibilitychange'));
+          window.dispatchEvent(new Event('pageshow'));
+          window.dispatchEvent(new Event('resize'));
+          window.dispatchEvent(new CustomEvent('chravel:pinned-updated', { detail: { source: 'native-bridge' } }));
+        } catch (error) {
+          console.log('ChravelNative pinned hydration nudge error', error);
+        }
+      }
+
+      function onRouteChange() {
+        makeTabRowsScrollable();
+        var href = String(window.location && window.location.href ? window.location.href : '').toLowerCase();
+        if (href.indexOf('pinned') !== -1) {
+          setTimeout(nudgePinnedHydration, 80);
+        }
+      }
+
+      var observer = new MutationObserver(function(mutations) {
+        makeTabRowsScrollable();
+        for (var i = 0; i < mutations.length; i++) {
+          var added = mutations[i].addedNodes;
+          for (var j = 0; j < added.length; j++) {
+            var node = added[j];
+            if (!node || node.nodeType !== 1) continue;
+            var text = ((node.textContent || '') + ' ' + (((node).innerText) || '')).toLowerCase();
+            if (text.indexOf('pinned successfully') !== -1 || text.indexOf('unpinned successfully') !== -1) {
+              setTimeout(nudgePinnedHydration, 80);
+              setTimeout(nudgePinnedHydration, 350);
+            }
+          }
+        }
+      });
+
+      var pushState = history.pushState;
+      history.pushState = function() {
+        var result = pushState.apply(this, arguments);
+        onRouteChange();
+        return result;
+      };
+
+      var replaceState = history.replaceState;
+      history.replaceState = function() {
+        var result = replaceState.apply(this, arguments);
+        onRouteChange();
+        return result;
+      };
+
+      window.addEventListener('popstate', onRouteChange, true);
+      window.addEventListener('resize', makeTabRowsScrollable, true);
+      observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
+      setTimeout(onRouteChange, 50);
+      setTimeout(onRouteChange, 500);
+      setTimeout(onRouteChange, 1200);
+    })();
+
     window.dispatchEvent(new Event('chravel:native-ready'));
     true;
   `;
