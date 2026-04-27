@@ -131,6 +131,23 @@ describe("buildInjectedJS", () => {
     expect(result).toContain("bottomPadding + 'px !important; }'");
   });
 
+
+  it("includes chat tab scroll patch keywords", () => {
+    const result = buildInjectedJS("android");
+    expect(result).toContain("TAB_KEYWORDS");
+    expect(result).toContain("patchScrollableRow");
+    expect(result).toContain("data-chravel-scroll-patched");
+    expect(result).toContain("child.style.flexShrink = '0'");
+  });
+
+  it("includes pinned hydration network hooks", () => {
+    const result = buildInjectedJS("android");
+    expect(result).toContain("wireNetworkPinnedSignals");
+    expect(result).toContain("maybePinnedMutation");
+    expect(result).toContain("schedulePinnedHydration('fetch')");
+    expect(result).toContain("schedulePinnedHydration('xhr')");
+  });
+
   it("dispatches chravel:native-ready event", () => {
     const result = buildInjectedJS("android");
     expect(result).toContain("chravel:native-ready");

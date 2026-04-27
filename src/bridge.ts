@@ -135,43 +135,149 @@ export function buildInjectedJS(platform: string, bottomInset: number = 0, isTab
     // Improve mobile tab UX (overflow clipping) and nudge data refresh
     // after pin/unpin actions so the Pinned view hydrates reliably.
     (function() {
+      var TAB_KEYWORDS = ['messages', 'broadcast', 'pinned', 'search', 'channel', 'chat', 'concierge', 'media', 'calendar'];
+
+      function textIncludesAny(value, keywords) {
+        var text = String(value || '').toLowerCase();
+        for (var i = 0; i < keywords.length; i++) {
+          if (text.indexOf(keywords[i]) !== -1) return true;
+        }
+        return false;
+      }
+
+      function looksLikeChatTabRow(el) {
+        if (!el || !el.children || el.children.length < 3) return false;
+        var text = String(el.textContent || '').toLowerCase();
+        return textIncludesAny(text, TAB_KEYWORDS);
+      }
+
+      function patchScrollableRow(el) {
+        if (!el || el.getAttribute('data-chravel-scroll-patched') === '1') return;
+
+        el.style.overflowX = 'auto';
+        el.style.overflowY = 'hidden';
+        el.style.webkitOverflowScrolling = 'touch';
+        el.style.scrollbarWidth = 'none';
+        el.style.msOverflowStyle = 'none';
+        el.style.touchAction = 'pan-x';
+        el.style.flexWrap = 'nowrap';
+        if (!el.style.paddingBottom) el.style.paddingBottom = '2px';
+
+        for (var c = 0; c < el.children.length; c++) {
+          var child = el.children[c];
+          if (!child || !child.style) continue;
+          child.style.flexShrink = '0';
+        }
+
+        el.setAttribute('data-chravel-scroll-patched', '1');
+      }
+
       function makeTabRowsScrollable() {
         try {
           var nodes = document.querySelectorAll('nav, [role="tablist"], [data-testid*="tab"], [class*="tab"], [class*="segment"]');
           for (var i = 0; i < nodes.length; i++) {
             var el = nodes[i];
             if (!el || !el.children || el.children.length < 3) continue;
-            if (el.scrollWidth <= el.clientWidth + 4) continue;
-
-            el.style.overflowX = 'auto';
-            el.style.overflowY = 'hidden';
-            el.style.webkitOverflowScrolling = 'touch';
-            el.style.scrollbarWidth = 'none';
-            el.style.msOverflowStyle = 'none';
-            if (!el.style.paddingBottom) el.style.paddingBottom = '2px';
+            var isOverflowing = el.scrollWidth > el.clientWidth + 4;
+            if (!isOverflowing && !looksLikeChatTabRow(el)) continue;
+            patchScrollableRow(el);
           }
         } catch (error) {
           console.log('ChravelNative tab overflow patch error', error);
         }
       }
 
-      function nudgePinnedHydration() {
+      function nudgePinnedHydration(source) {
         try {
           window.dispatchEvent(new Event('focus'));
           window.dispatchEvent(new Event('visibilitychange'));
           window.dispatchEvent(new Event('pageshow'));
           window.dispatchEvent(new Event('resize'));
-          window.dispatchEvent(new CustomEvent('chravel:pinned-updated', { detail: { source: 'native-bridge' } }));
+          window.dispatchEvent(new CustomEvent('chravel:pinned-updated', { detail: { source: source || 'native-bridge' } }));
         } catch (error) {
           console.log('ChravelNative pinned hydration nudge error', error);
         }
+      }
+
+      function schedulePinnedHydration(source) {
+        nudgePinnedHydration(source);
+        setTimeout(function() { nudgePinnedHydration(source); }, 60);
+        setTimeout(function() { nudgePinnedHydration(source); }, 220);
+      }
+
+      function maybePinnedMutation(url, body) {
+        var lowerUrl = String(url || '').toLowerCase();
+        var lowerBody = String(body || '').toLowerCase();
+        return lowerUrl.indexOf('pin') !== -1 || lowerBody.indexOf('pin') !== -1 || lowerBody.indexOf('pinned') !== -1;
+      }
+
+      function wireNetworkPinnedSignals() {
+        try {
+          var nativeFetch = window.fetch;
+          if (typeof nativeFetch === 'function' && !nativeFetch.__chravelPinnedPatched) {
+            var wrappedFetch = function() {
+              var url = arguments[0];
+              var options = arguments[1] || {};
+              var body = options && options.body ? options.body : '';
+              return nativeFetch.apply(this, arguments).then(function(response) {
+                if (response && response.ok && maybePinnedMutation(url, body)) {
+                  schedulePinnedHydration('fetch');
+                }
+                return response;
+              });
+            };
+            wrappedFetch.__chravelPinnedPatched = true;
+            window.fetch = wrappedFetch;
+          }
+
+          var xhrOpen = XMLHttpRequest.prototype.open;
+          var xhrSend = XMLHttpRequest.prototype.send;
+          if (!xhrOpen.__chravelPinnedPatched) {
+            XMLHttpRequest.prototype.open = function(method, url) {
+              this.__chravelUrl = url;
+              return xhrOpen.apply(this, arguments);
+            };
+            XMLHttpRequest.prototype.open.__chravelPinnedPatched = true;
+          }
+          if (!xhrSend.__chravelPinnedPatched) {
+            XMLHttpRequest.prototype.send = function(body) {
+              this.__chravelBody = body;
+              this.addEventListener('load', function() {
+                if (this.status >= 200 && this.status < 300 && maybePinnedMutation(this.__chravelUrl, this.__chravelBody)) {
+                  schedulePinnedHydration('xhr');
+                }
+              });
+              return xhrSend.apply(this, arguments);
+            };
+            XMLHttpRequest.prototype.send.__chravelPinnedPatched = true;
+          }
+        } catch (error) {
+          console.log('ChravelNative pinned network patch error', error);
+        }
+      }
+
+      function wirePinnedTabSignals() {
+        document.addEventListener('click', function(event) {
+          var target = event && event.target;
+          if (!target) return;
+          var text = '';
+          var node = target;
+          for (var i = 0; i < 4 && node; i++) {
+            text += ' ' + String(node.textContent || '');
+            node = node.parentElement;
+          }
+          var lower = text.toLowerCase();
+          if (lower.indexOf('pinned') !== -1 || lower.indexOf('pin message') !== -1 || lower.indexOf('unpin') !== -1) {
+            schedulePinnedHydration('click');
+          }
+        }, true);
       }
 
       function onRouteChange() {
         makeTabRowsScrollable();
         var href = String(window.location && window.location.href ? window.location.href : '').toLowerCase();
         if (href.indexOf('pinned') !== -1) {
-          setTimeout(nudgePinnedHydration, 80);
+          schedulePinnedHydration('route');
         }
       }
 
@@ -184,8 +290,7 @@ export function buildInjectedJS(platform: string, bottomInset: number = 0, isTab
             if (!node || node.nodeType !== 1) continue;
             var text = ((node.textContent || '') + ' ' + (((node).innerText) || '')).toLowerCase();
             if (text.indexOf('pinned successfully') !== -1 || text.indexOf('unpinned successfully') !== -1) {
-              setTimeout(nudgePinnedHydration, 80);
-              setTimeout(nudgePinnedHydration, 350);
+              schedulePinnedHydration('toast');
             }
           }
         }
@@ -205,6 +310,8 @@ export function buildInjectedJS(platform: string, bottomInset: number = 0, isTab
         return result;
       };
 
+      wireNetworkPinnedSignals();
+      wirePinnedTabSignals();
       window.addEventListener('popstate', onRouteChange, true);
       window.addEventListener('resize', makeTabRowsScrollable, true);
       observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
