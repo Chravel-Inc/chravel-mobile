@@ -1,6 +1,17 @@
 import { evaluateWebViewRequestPolicy } from "../webViewRequestFilter";
 
 describe("evaluateWebViewRequestPolicy", () => {
+  it("keeps www.chravel.app routes inside the WebView", () => {
+    const result = evaluateWebViewRequestPolicy({
+      url: "https://www.chravel.app/trip/abc?tab=calendar",
+      platformOS: "android",
+      isTopFrame: true,
+    });
+
+    expect(result.allowInWebView).toBe(true);
+    expect(result.externalUrlToOpen).toBeUndefined();
+  });
+
   it("routes OAuth to in-app browser for native in-app contexts", () => {
     const oauthUrl =
       "https://abc.supabase.co/auth/v1/authorize?provider=google&redirect_to=https%3A%2F%2Fchravel.app%2Fauth-callback";

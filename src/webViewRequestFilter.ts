@@ -1,4 +1,9 @@
-const ALLOWED_ORIGINS = ["https://chravel.app", "about:", "data:"];
+const ALLOWED_ORIGINS = [
+  "https://chravel.app",
+  "https://www.chravel.app",
+  "about:",
+  "data:",
+];
 
 const ALLOWED_ORIGINS_REGEX = new RegExp(
   "^(?:" +
