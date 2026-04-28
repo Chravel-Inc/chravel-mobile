@@ -1,17 +1,4 @@
-const ALLOWED_ORIGINS = [
-  "https://chravel.app",
-  "https://www.chravel.app",
-  "about:",
-  "data:",
-];
-
-const ALLOWED_ORIGINS_REGEX = new RegExp(
-  "^(?:" +
-    ALLOWED_ORIGINS.map((o) =>
-      o.replace(/[.*+?^\$\{\}()|[\]\\]/g, "\\$&"),
-    ).join("|") +
-    ")",
-);
+const ALLOWED_WEB_HOSTS = new Set(["chravel.app", "www.chravel.app"]);
 
 const ALLOWED_HOSTS = [
   "supabase.co",
@@ -34,6 +21,21 @@ export interface RequestPolicyResult {
   openInAppBrowser?: boolean;
 }
 
+function isAllowedChravelWebOrigin(url: string): boolean {
+  if (url.startsWith("about:") || url.startsWith("data:")) {
+    return true;
+  }
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === "https:" &&
+      ALLOWED_WEB_HOSTS.has(parsed.hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function evaluateWebViewRequestPolicy({
   url,
   isTopFrame,
@@ -43,7 +45,7 @@ export function evaluateWebViewRequestPolicy({
     return { allowInWebView: true };
   }
 
-  if (ALLOWED_ORIGINS_REGEX.test(url)) {
+  if (isAllowedChravelWebOrigin(url)) {
     return { allowInWebView: true };
   }
 
