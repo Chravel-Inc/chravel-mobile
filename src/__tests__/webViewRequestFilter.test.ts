@@ -12,6 +12,18 @@ describe("evaluateWebViewRequestPolicy", () => {
     expect(result.externalUrlToOpen).toBeUndefined();
   });
 
+  it("does not treat look-alike hosts as chravel.app (suffix bypass)", () => {
+    const malicious = "https://chravel.app.evil.com/phish";
+    const result = evaluateWebViewRequestPolicy({
+      url: malicious,
+      platformOS: "ios",
+      isTopFrame: true,
+    });
+
+    expect(result.allowInWebView).toBe(false);
+    expect(result.externalUrlToOpen).toBe(malicious);
+  });
+
   it("routes OAuth to in-app browser for native in-app contexts", () => {
     const oauthUrl =
       "https://abc.supabase.co/auth/v1/authorize?provider=google&redirect_to=https%3A%2F%2Fchravel.app%2Fauth-callback";
