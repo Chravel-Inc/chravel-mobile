@@ -174,6 +174,7 @@ module.exports = ({ config }) => ({
                                 autoVerify: true,
                                 data: [
                         { scheme: "https", host: "chravel.app", pathPrefix: "/trip" },
+{ scheme: "https", host: "chravel.app", pathPrefix: "/j" },
 { scheme: "https", host: "chravel.app", pathPrefix: "/join" },
 { scheme: "https", host: "chravel.app", pathPrefix: "/invite" },
 { scheme: "https", host: "chravel.app", pathPrefix: "/tour" },
@@ -185,6 +186,7 @@ module.exports = ({ config }) => ({
 { scheme: "https", host: "chravel.app", pathPrefix: "/auth" },
 { scheme: "https", host: "chravel.app", pathPrefix: "/settings" },
 { scheme: "https", host: "www.chravel.app", pathPrefix: "/trip" },
+{ scheme: "https", host: "www.chravel.app", pathPrefix: "/j" },
 { scheme: "https", host: "www.chravel.app", pathPrefix: "/join" },
 { scheme: "https", host: "www.chravel.app", pathPrefix: "/invite" },
 { scheme: "https", host: "www.chravel.app", pathPrefix: "/tour" },
