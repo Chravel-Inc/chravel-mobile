@@ -66,6 +66,12 @@ describe("parseDeepLinkUrl", () => {
       expect(parseDeepLinkUrl("https://chravel.app/trip/abc")).toBe("/trip/abc");
     });
 
+    it("parses short invite links (/j)", () => {
+      expect(parseDeepLinkUrl("https://chravel.app/j/chravelhmbehnbu")).toBe(
+        "/j/chravelhmbehnbu",
+      );
+    });
+
     it("parses www subdomain", () => {
       expect(parseDeepLinkUrl("https://www.chravel.app/trip/abc")).toBe("/trip/abc");
     });
