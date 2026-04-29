@@ -82,9 +82,16 @@ describe("parseDeepLinkUrl", () => {
   });
 
   describe("edge cases", () => {
-    it("returns path for non-chravel URLs (fallback behavior)", () => {
-      // parseDeepLinkUrl returns the pathname for any URL with a leading slash
-      expect(parseDeepLinkUrl("https://google.com/search")).toBe("/search");
+    it("returns null for non-chravel https URLs (no pathname-only fallback)", () => {
+      expect(parseDeepLinkUrl("https://google.com/search")).toBeNull();
+    });
+
+    it("returns null for https URLs whose path would be scheme-relative", () => {
+      expect(parseDeepLinkUrl("https://evil.com//phish.example/path")).toBeNull();
+    });
+
+    it("returns null for chravel:// URLs that normalize to scheme-relative paths", () => {
+      expect(parseDeepLinkUrl("chravel:////evil.com/x")).toBeNull();
     });
 
     it("returns null for empty string", () => {
@@ -141,5 +148,11 @@ describe("buildWebViewLaunchUrl", () => {
     expect(
       buildWebViewLaunchUrl("/trip/abc?app_context=web&tab=plan"),
     ).toBe("https://chravel.app/trip/abc?app_context=native&tab=plan");
+  });
+
+  it("does not resolve scheme-relative paths to a foreign origin", () => {
+    expect(buildWebViewLaunchUrl("//evil.com/phish")).toBe(
+      "https://chravel.app/auth?app_context=native",
+    );
   });
 });
