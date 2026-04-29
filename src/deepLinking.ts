@@ -21,25 +21,36 @@ export function parseDeepLinkUrl(url: string): string | null {
       const host = parsed.hostname || "";
       const pathname = parsed.pathname || "";
       const fullPath = host ? `/${host}${pathname}` : pathname;
-      return fullPath + parsed.search + parsed.hash;
+      const withQuery = fullPath + parsed.search + parsed.hash;
+      if (withQuery.startsWith("//")) {
+        return null;
+      }
+      return withQuery;
     }
 
     if (
       parsed.hostname === "chravel.app" ||
       parsed.hostname === "www.chravel.app"
     ) {
-      return parsed.pathname + parsed.search + parsed.hash;
+      const withQuery = parsed.pathname + parsed.search + parsed.hash;
+      if (withQuery.startsWith("//")) {
+        return null;
+      }
+      return withQuery;
     }
 
-    if (parsed.pathname.startsWith("/")) {
-      return parsed.pathname + parsed.search;
-    }
-
+    // Do not return a bare pathname for other hosts: paths like "//evil.com/x"
+    // would become scheme-relative URLs in buildWebViewLaunchUrl and escape
+    // the chravel.app origin.
     return null;
   } catch {
     if (url.startsWith("chravel://")) {
       const path = url.replace("chravel://", "");
-      return path.startsWith("/") ? path : `/${path}`;
+      const normalized = path.startsWith("/") ? path : `/${path}`;
+      if (normalized.startsWith("//")) {
+        return null;
+      }
+      return normalized;
     }
     return null;
   }
@@ -53,7 +64,11 @@ export const AUTH_LAUNCH_PATH = "/auth";
  * Always appends app_context=native while preserving path/query/hash.
  */
 export function buildWebViewLaunchUrl(path: string): string {
-  const normalizedPath = path ? (path.startsWith("/") ? path : `/${path}`) : AUTH_LAUNCH_PATH;
+  let normalizedPath = path ? (path.startsWith("/") ? path : `/${path}`) : AUTH_LAUNCH_PATH;
+  // Scheme-relative paths resolve against the wrong origin when passed to URL(base, origin).
+  if (normalizedPath.startsWith("//")) {
+    normalizedPath = AUTH_LAUNCH_PATH;
+  }
   const target = new URL(normalizedPath, WEB_APP_URL);
   target.searchParams.set("app_context", "native");
   return target.toString();
