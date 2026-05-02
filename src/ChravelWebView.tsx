@@ -329,12 +329,11 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         applicationNameForUserAgent={Platform.OS === "android" ? NATIVE_USER_AGENT_SUFFIX : undefined}
         mediaPlaybackRequiresUserAction={false}
         allowsInlineMediaPlayback={true}
-        mediaCapturePermissionGrantType="grant"
-        geolocationEnabled={true}
+        geolocationEnabled={false}
         sharedCookiesEnabled={true}
-        thirdPartyCookiesEnabled={true}
+        thirdPartyCookiesEnabled={false}
         domStorageEnabled={true}
-        javaScriptCanOpenWindowsAutomatically={true}
+        javaScriptCanOpenWindowsAutomatically={false}
         onShouldStartLoadWithRequest={(request) => shouldLoadRequest(request)}
         onNavigationStateChange={(navState) => {
           const url = navState.url ?? "";
