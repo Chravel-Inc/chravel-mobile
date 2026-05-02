@@ -207,8 +207,10 @@ export function buildInjectedJS(platform: string, bottomInset: number = 0, isTab
 
       function maybePinnedMutation(url, body) {
         var lowerUrl = String(url || '').toLowerCase();
-        var lowerBody = String(body || '').toLowerCase();
-        return lowerUrl.indexOf('pin') !== -1 || lowerBody.indexOf('pin') !== -1 || lowerBody.indexOf('pinned') !== -1;
+        if (lowerUrl.indexOf('pin') !== -1) return true;
+        if (!body || typeof body !== 'string') return false;
+        var lowerBody = body.toLowerCase();
+        return lowerBody.indexOf('pin') !== -1;
       }
 
       function wireNetworkPinnedSignals() {
