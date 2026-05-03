@@ -73,6 +73,17 @@ describe("revenuecat", () => {
     expect(mockPurchases.getOfferings).toHaveBeenCalledTimes(1);
   });
 
+  it("identifies user even if configure was only started in parallel (no silent no-op)", async () => {
+    mockPurchases.logIn.mockResolvedValue(undefined);
+
+    const configureStarted = configureRevenueCat();
+    await identifyUser("user-early");
+    await configureStarted;
+
+    expect(mockPurchases.configure).toHaveBeenCalled();
+    expect(mockPurchases.logIn).toHaveBeenCalledWith("user-early");
+  });
+
   it("should invalidate the cache when user is identified", async () => {
     const mockPackage = { identifier: "pkg_1" };
     mockPurchases.getOfferings.mockResolvedValue({
