@@ -9,30 +9,37 @@ import { ENTITLEMENTS } from "./constants";
 
 let isConfigured = false;
 let packagesCache: Map<string, PurchasesPackage> | null = null;
+/** Coalesces concurrent configure + ensures identify/purchase await the same init. */
+let configurePromise: Promise<void> | null = null;
 
 /**
  * Initialize RevenueCat. Call once on app startup.
  * No-ops if API key is missing (allows dev builds without keys).
+ * Safe to await from the bridge before identify/purchase: overlapping calls share one init.
  */
 export async function configureRevenueCat(): Promise<void> {
   if (isConfigured) return;
+  if (!configurePromise) {
+    configurePromise = (async () => {
+      const apiKey =
+        Platform.OS === "ios"
+          ? Constants.expoConfig?.extra?.revenueCatIosApiKey
+          : Constants.expoConfig?.extra?.revenueCatAndroidApiKey;
 
-  const apiKey =
-    Platform.OS === "ios"
-      ? Constants.expoConfig?.extra?.revenueCatIosApiKey
-      : Constants.expoConfig?.extra?.revenueCatAndroidApiKey;
+      if (!apiKey) {
+        return;
+      }
 
-  if (!apiKey) {
-    return;
+      Purchases.configure({ apiKey });
+
+      if (__DEV__) {
+        Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+      }
+
+      isConfigured = true;
+    })();
   }
-
-  Purchases.configure({ apiKey });
-
-  if (__DEV__) {
-    Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-  }
-
-  isConfigured = true;
+  await configurePromise;
 }
 
 /**
@@ -56,6 +63,7 @@ async function getCachedPackages(): Promise<Map<string, PurchasesPackage>> {
  * The web app sends the Supabase user ID via the bridge.
  */
 export async function identifyUser(userId: string): Promise<void> {
+  await configureRevenueCat();
   if (!isConfigured) return;
   packagesCache = null;
   await Purchases.logIn(userId);
@@ -65,6 +73,7 @@ export async function identifyUser(userId: string): Promise<void> {
  * Get current customer info (entitlements, subscriptions).
  */
 export async function getCustomerInfo(): Promise<CustomerInfo | null> {
+  await configureRevenueCat();
   if (!isConfigured) return null;
   return Purchases.getCustomerInfo();
 }
@@ -86,6 +95,7 @@ export async function hasEntitlement(
 export async function purchasePackage(
   packageId: string
 ): Promise<{ success: boolean; customerInfo?: CustomerInfo; error?: string }> {
+  await configureRevenueCat();
   if (!isConfigured) {
     return { success: false, error: "RevenueCat not configured" };
   }
@@ -120,6 +130,7 @@ export async function restorePurchases(): Promise<{
   customerInfo?: CustomerInfo;
   error?: string;
 }> {
+  await configureRevenueCat();
   if (!isConfigured) {
     return { success: false, error: "RevenueCat not configured" };
   }
