@@ -105,6 +105,9 @@ export function ChravelWebView({ onError }: ChravelWebViewProps) {
         navigateWebView(path);
         return;
       }
+      // Any non-callback route means OAuth redirect handling is complete (or not in play).
+      // Reset the flag so a stale auth-redirect state cannot keep the loading overlay pinned.
+      isAuthRedirectRef.current = false;
       navigateWebView(path);
     },
     [navigateWebView, clearLoadingFallbackTimer],
